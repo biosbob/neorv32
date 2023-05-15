@@ -131,7 +131,7 @@ package neorv32_package is
 
   -- Internal Bootloader ROM --
   -- Actual bootloader size is determined during runtime via the length of the bootloader initialization image
-  constant boot_rom_base_c      : std_ulogic_vector(31 downto 0) := x"ffff0000"; -- bootloader base address, fixed!
+  constant boot_rom_base_c      : std_ulogic_vector(31 downto 0) := x"00010000"; -- bootloader base address, fixed!
   constant boot_rom_max_size_c  : natural := 32*1024; -- max module's address space size in bytes, fixed!
 
   -- On-Chip Debugger: Debug Module --
