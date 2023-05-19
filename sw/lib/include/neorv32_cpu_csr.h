@@ -291,6 +291,18 @@ enum NEORV32_CSR_enum {
 
 
 /**********************************************************************//**
+ * CPU <b>fflags (fcsr)</b> CSR (r/w): FPU accrued exception flags
+ **************************************************************************/
+enum NEORV32_CSR_FFLAGS_enum {
+  CSR_FFLAGS_NX = 0, /**< CPU fflags CSR (0): NX - inexact (r/w) */
+  CSR_FFLAGS_UF = 1, /**< CPU fflags CSR (1): UF - underflow (r/w) */
+  CSR_FFLAGS_OF = 2, /**< CPU fflags CSR (2): OF - overflow (r/w) */
+  CSR_FFLAGS_DZ = 3, /**< CPU fflags CSR (3): DZ - divide by zero (r/w) */
+  CSR_FFLAGS_NV = 4  /**< CPU fflags CSR (4): NV - invalid operation (r/w) */
+};
+
+
+/**********************************************************************//**
  * CPU <b>mstatus</b> CSR (r/w): Machine status
  **************************************************************************/
 enum NEORV32_CSR_MSTATUS_enum {
@@ -350,6 +362,7 @@ enum NEORV32_CSR_MIE_enum {
   CSR_MIE_MTIE    =  7, /**< CPU mie CSR  (7): MTIE - Machine timer interrupt enable bit (r/w) */
   CSR_MIE_MEIE    = 11, /**< CPU mie CSR (11): MEIE - Machine external interrupt enable bit (r/w) */
 
+  /* NEORV32-specific extension: Fast Interrupt Requests (FIRQ) */
   CSR_MIE_FIRQ0E  = 16, /**< CPU mie CSR (16): FIRQ0E - Fast interrupt channel 0 enable bit (r/w) */
   CSR_MIE_FIRQ1E  = 17, /**< CPU mie CSR (17): FIRQ1E - Fast interrupt channel 1 enable bit (r/w) */
   CSR_MIE_FIRQ2E  = 18, /**< CPU mie CSR (18): FIRQ2E - Fast interrupt channel 2 enable bit (r/w) */
@@ -377,7 +390,7 @@ enum NEORV32_CSR_MIP_enum {
   CSR_MIP_MTIP    =  7, /**< CPU mip CSR  (7): MTIP - Machine timer interrupt pending (r/c) */
   CSR_MIP_MEIP    = 11, /**< CPU mip CSR (11): MEIP - Machine external interrupt pending (r/c) */
 
-  /* NEORV32-specific extension */
+  /* NEORV32-specific extension: Fast Interrupt Requests (FIRQ) */
   CSR_MIP_FIRQ0P  = 16, /**< CPU mip CSR (16): FIRQ0P - Fast interrupt channel 0 pending (r/c) */
   CSR_MIP_FIRQ1P  = 17, /**< CPU mip CSR (17): FIRQ1P - Fast interrupt channel 1 pending (r/c) */
   CSR_MIP_FIRQ2P  = 18, /**< CPU mip CSR (18): FIRQ2P - Fast interrupt channel 2 pending (r/c) */

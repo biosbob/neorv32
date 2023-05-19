@@ -33,6 +33,15 @@ mimpid = 0x01080200 => Version 01.08.02.00 => v1.8.2
 
 | Date (*dd.mm.yyyy*) | Version | Comment |
 |:-------------------:|:-------:|:--------|
+| 19.05.2023 | 1.8.5.2 | :sparkles: add automatic trigger mode to **DMA** (trigger transfer if a processor-internal peripheral issues an interrupt request); [#618](https://github.com/stnolting/neorv32/pull/618) |
+| 18.05.2023 | 1.8.5.1 | software can now retrieve the configured FIFO size of the **TRNG**; [#616](https://github.com/stnolting/neorv32/pull/616) |
+| 18.05.2023 | [**:rocket:1.8.5**](https://github.com/stnolting/neorv32/releases/tag/v1.8.5) | **New release** |
+| 18.05.2023 | 1.8.4.9 | remove `is_simulation` flag from SYSINFO; add programmable interrupt to **TRNG** module; [#615](https://github.com/stnolting/neorv32/pull/615) |
+| 12.05.2023 | 1.8.4.8 | `mtval` CSR now provides the address of `ebreak` exceptions (re-added temporarily to pass RISC-V ISA tests); [#611](https://github.com/stnolting/neorv32/pull/611) |
+| 03.05.2023 | 1.8.4.7 | :bug: fix bug in FPU (terminate FPU sub-module operations if an exception has been raised); [#609](https://github.com/stnolting/neorv32/pull/609) |
+| 02.05.2023 | 1.8.4.6 | make SDI FIFO access entirely synchronous; upgrade processor memory modules; update test setup wrappers; [#608]((https://github.com/stnolting/neorv32/pull/608) |
+| 30.04.2023 | 1.8.4.5 | rework processor-internal bus system; [#607](https://github.com/stnolting/neorv32/pull/607) |
+| 27.04.2023 | 1.8.4.4 | minor hardware edits and switching activity optimizations of CPU bus unit; [#605](https://github.com/stnolting/neorv32/pull/605) |
 | 25.04.2023 | 1.8.4.3 | :bug: fix bug in **DMA** (corrupted write-back when there are bus wait cycles - e.g. when no caches are implemented); [#601](https://github.com/stnolting/neorv32/pull/601) |
 | 24.04.2023 | 1.8.4.2 | minor rtl edits; shorten critical path of d-cache setup; [#599](https://github.com/stnolting/neorv32/pull/599) |
 | 22.04.2023 | 1.8.4.1 | :sparkles: add optional **direct memory access controller (DMA)**; [#593](https://github.com/stnolting/neorv32/pull/593) |
