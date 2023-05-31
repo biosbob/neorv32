@@ -254,7 +254,7 @@ begin
 
     -- CPU Core -------------------------------------------------------------------------------
     -- -------------------------------------------------------------------------------------------
-    neorv32_cpu_inst : neorv32_cpu
+    neorv32_cpu_inst : entity neorv32.neorv32_cpu
     generic map(
         -- General --
         HART_ID => x"00000000",
@@ -348,7 +348,7 @@ begin
 
     -- Bus Keeper (BUSKEEPER) -----------------------------------------------------------------
     -- -------------------------------------------------------------------------------------------
-    neorv32_bus_keeper_inst : neorv32_bus_keeper
+    neorv32_bus_keeper_inst : entity neorv32.neorv32_bus_keeper
     port map(
         clk_i => clk_i,
         rstn_i => rstn_int,
@@ -387,7 +387,7 @@ begin
 
     -- Processor-Internal Instruction Memory (IMEM) -------------------------------------------
     -- -------------------------------------------------------------------------------------------
-    neorv32_int_imem_inst : neorv32_imem
+    neorv32_int_imem_inst : entity neorv32.neorv32_imem
     generic map(
         IMEM_BASE => imem_base_c,
         IMEM_SIZE => MEM_INT_IMEM_SIZE,
@@ -401,7 +401,7 @@ begin
 
     -- Processor-Internal Data Memory (DMEM) --------------------------------------------------
     -- -------------------------------------------------------------------------------------------
-    neorv32_int_dmem_inst : neorv32_dmem
+    neorv32_int_dmem_inst : entity neorv32.neorv32_dmem
     generic map(
         DMEM_BASE => dmem_base_c,
         DMEM_SIZE => MEM_INT_DMEM_SIZE
@@ -426,7 +426,7 @@ begin
 
     -- Execute In Place Module (XIP) ----------------------------------------------------------
     -- -------------------------------------------------------------------------------------------
-    neorv32_xip_inst : neorv32_xip
+    neorv32_xip_inst : entity neorv32.neorv32_xip
     port map(
         -- global control --
         clk_i => clk_i,
@@ -464,7 +464,7 @@ begin
 
     -- General Purpose Input/Output Port (GPIO) -----------------------------------------------
     -- -------------------------------------------------------------------------------------------
-        neorv32_gpio_inst : neorv32_gpio
+        neorv32_gpio_inst : entity neorv32.neorv32_gpio
         generic map(
             GPIO_NUM => IO_GPIO_NUM
         )
@@ -484,7 +484,7 @@ begin
 
     -- Primary Universal Asynchronous Receiver/Transmitter (UART0) ----------------------------
     -- -------------------------------------------------------------------------------------------
-        neorv32_uart0_inst : neorv32_uart
+        neorv32_uart0_inst : entity neorv32.neorv32_uart
         generic map(
             UART_PRIMARY => true,
             UART_RX_FIFO => 1,
@@ -507,7 +507,7 @@ begin
 
     -- External Interrupt Controller (XIRQ) ---------------------------------------------------
     -- -------------------------------------------------------------------------------------------
-        neorv32_xirq_inst : neorv32_xirq
+        neorv32_xirq_inst : entity neorv32.neorv32_xirq
         generic map(
             XIRQ_NUM_CH => XIRQ_NUM_CH,
             XIRQ_TRIGGER_TYPE => XIRQ_TRIGGER_TYPE,
@@ -525,7 +525,7 @@ begin
 
     -- System Configuration Information Memory (SYSINFO) --------------------------------------
     -- -------------------------------------------------------------------------------------------
-    neorv32_sysinfo_inst : neorv32_sysinfo
+    neorv32_sysinfo_inst : entity neorv32.neorv32_sysinfo
     generic map(
         -- General --
         CLOCK_FREQUENCY => CLOCK_FREQUENCY,
