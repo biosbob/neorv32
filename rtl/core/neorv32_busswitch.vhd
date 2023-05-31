@@ -43,183 +43,195 @@ library neorv32;
 use neorv32.neorv32_package.all;
 
 entity neorv32_busswitch is
-  generic (
-    PORT_A_READ_ONLY : boolean; -- set if port A is read-only
-    PORT_B_READ_ONLY : boolean  -- set if port B is read-only
-  );
-  port (
-    clk_i   : in  std_ulogic; -- global clock, rising edge
-    rstn_i  : in  std_ulogic; -- global reset, low-active, async
-    a_req_i : in  bus_req_t;  -- host port A: request bus
-    a_rsp_o : out bus_rsp_t;  -- host port A: response bus
-    b_req_i : in  bus_req_t;  -- host port B: request bus
-    b_rsp_o : out bus_rsp_t;  -- host port B: response bus
-    x_req_o : out bus_req_t;  -- device port request bus
-    x_rsp_i : in  bus_rsp_t   -- device port response bus
-  );
+    port (
+        clk_i : in std_ulogic; -- global clock, rising edge
+        rstn_i : in std_ulogic; -- global reset, low-active, async
+        data_req_i : in bus_req_t; -- host data port: request bus
+        data_rsp_o : out bus_rsp_t; -- host data port: response bus
+        inst_req_i : in bus_req_t; -- host inst port: request bus
+        inst_rsp_o : out bus_rsp_t; -- host inst port: response bus
+        peri_req_o : out bus_req_t; -- device port request bus
+        peri_rsp_i : in bus_rsp_t -- device port response bus
+    );
 end neorv32_busswitch;
 
 architecture neorv32_busswitch_rtl of neorv32_busswitch is
 
-  -- access requests --
-  signal a_rd_req_buf,  a_wr_req_buf  : std_ulogic;
-  signal b_rd_req_buf,  b_wr_req_buf  : std_ulogic;
-  signal a_req_current, a_req_pending : std_ulogic;
-  signal b_req_current, b_req_pending : std_ulogic;
+    constant PORT_DATA_READ_ONLY : boolean := false;
+    constant PORT_INST_READ_ONLY : boolean := true;
 
-  -- internal bus lines --
-  signal a_bus_ack, b_bus_ack : std_ulogic;
-  signal a_bus_err, b_bus_err : std_ulogic;
-  signal x_bus_we,  x_bus_re   : std_ulogic;
+    -- access requests --
+    signal data_rd_req_buf, data_wr_req_buf : std_ulogic;
+    signal inst_rd_req_buf, inst_wr_req_buf : std_ulogic;
+    signal data_req_current, data_req_pending : std_ulogic;
+    signal inst_req_current, inst_req_pending : std_ulogic;
 
-  -- access arbiter --
-  type arbiter_state_t is (IDLE, A_BUSY, A_RETIRE, B_BUSY, B_RETIRE);
-  type arbiter_t is record
-    state     : arbiter_state_t;
-    state_nxt : arbiter_state_t;
-    bus_sel   : std_ulogic;
-    re_trig   : std_ulogic;
-    we_trig   : std_ulogic;
-  end record;
-  signal arbiter : arbiter_t;
+    -- internal bus lines --
+    signal data_bus_ack, inst_bus_ack : std_ulogic;
+    signal data_bus_err, inst_bus_err : std_ulogic;
+    signal peri_bus_we, peri_bus_re : std_ulogic;
+
+    -- access arbiter --
+    type arbiter_state_t is (IDLE, DATA_BUSY, DATA_RETIRE, INST_BUSY, INST_RETIRE);
+    type arbiter_t is record
+        state : arbiter_state_t;
+        state_nxt : arbiter_state_t;
+        bus_sel : std_ulogic;
+        re_trig : std_ulogic;
+        we_trig : std_ulogic;
+    end record;
+    signal arbiter : arbiter_t;
 
 begin
 
-  -- Access Arbiter -------------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  arbiter_sync: process(rstn_i, clk_i)
-  begin
-    if (rstn_i = '0') then
-      arbiter.state <= IDLE;
-      a_rd_req_buf <= '0';
-      a_wr_req_buf <= '0';
-      b_rd_req_buf <= '0';
-      b_wr_req_buf <= '0';
-    elsif rising_edge(clk_i) then
-      arbiter.state <= arbiter.state_nxt;
-      -- port A requests --
-      a_rd_req_buf <= (a_rd_req_buf or a_req_i.re) and (not (a_bus_err or a_bus_ack));
-      a_wr_req_buf <= (a_wr_req_buf or a_req_i.we) and (not (a_bus_err or a_bus_ack)) and bool_to_ulogic_f(PORT_A_READ_ONLY = false);
-      -- port B requests --
-      b_rd_req_buf <= (b_rd_req_buf or b_req_i.re) and (not (b_bus_err or b_bus_ack));
-      b_wr_req_buf <= (b_wr_req_buf or b_req_i.we) and (not (b_bus_err or b_bus_ack)) and bool_to_ulogic_f(PORT_B_READ_ONLY = false);
-    end if;
-  end process arbiter_sync;
-
-  -- any current requests? --
-  a_req_current <= (a_req_i.re or a_req_i.we) when (PORT_A_READ_ONLY = false) else a_req_i.re;
-  b_req_current <= (b_req_i.re or b_req_i.we) when (PORT_B_READ_ONLY = false) else b_req_i.re;
-
-  -- any pending requests? --
-  a_req_pending <= (a_rd_req_buf or a_wr_req_buf) when (PORT_A_READ_ONLY = false) else a_rd_req_buf;
-  b_req_pending <= (b_rd_req_buf or b_wr_req_buf) when (PORT_B_READ_ONLY = false) else b_rd_req_buf;
-
-  -- FSM --
-  arbiter_comb: process(arbiter, a_req_current, b_req_current, a_req_pending, b_req_pending,
-                        a_rd_req_buf, a_wr_req_buf, b_rd_req_buf, b_wr_req_buf, x_rsp_i)
-  begin
-    -- arbiter defaults --
-    arbiter.state_nxt <= arbiter.state;
-    arbiter.bus_sel   <= '0';
-    arbiter.we_trig   <= '0';
-    arbiter.re_trig   <= '0';
-
-    -- state machine --
-    case arbiter.state is
-
-      when IDLE => -- wait for requests
-      -- ------------------------------------------------------------
-        if (a_req_current = '1') then -- current request from port A?
-          arbiter.bus_sel   <= '0';
-          arbiter.state_nxt <= A_BUSY;
-        elsif (a_req_pending = '1') then -- pending request from port A?
-          arbiter.bus_sel   <= '0';
-          arbiter.state_nxt <= A_RETIRE;
-        elsif (b_req_current = '1') then -- pending request from port B?
-          arbiter.bus_sel   <= '1';
-          arbiter.state_nxt <= B_BUSY;
-        elsif (b_req_pending = '1') then -- current request from port B?
-          arbiter.bus_sel   <= '1';
-          arbiter.state_nxt <= B_RETIRE;
+    -- Access Arbiter -------------------------------------------------------------------------
+    -- -------------------------------------------------------------------------------------------
+    arbiter_sync : process (rstn_i, clk_i)
+    begin
+        if (rstn_i = '0') then
+            arbiter.state <= IDLE;
+            data_rd_req_buf <= '0';
+            data_wr_req_buf <= '0';
+            inst_rd_req_buf <= '0';
+            inst_wr_req_buf <= '0';
+        elsif rising_edge(clk_i) then
+            arbiter.state <= arbiter.state_nxt;
+            -- port A requests --
+            data_rd_req_buf <= (data_rd_req_buf or data_req_i.re) and (not (data_bus_err or data_bus_ack));
+            data_wr_req_buf <= (data_wr_req_buf or data_req_i.we) and (not (data_bus_err or data_bus_ack)) and bool_to_ulogic_f(PORT_DATA_READ_ONLY = false);
+            -- port B requests --
+            inst_rd_req_buf <= (inst_rd_req_buf or inst_req_i.re) and (not (inst_bus_err or inst_bus_ack));
+            inst_wr_req_buf <= (inst_wr_req_buf or inst_req_i.we) and (not (inst_bus_err or inst_bus_ack)) and bool_to_ulogic_f(PORT_INST_READ_ONLY = false);
         end if;
+    end process arbiter_sync;
 
-      when A_BUSY => -- port A pending access
-      -- ------------------------------------------------------------
-        arbiter.bus_sel <= '0'; -- access from port A
-        if (x_rsp_i.err = '1') or (x_rsp_i.ack = '1') then
--- [COMMENT NOTE] Direct return to IDLE to further promote port A access requests.
---        if (b_req_pending = '1') or (b_req_current = '1') then -- any request from B?
---          arbiter.state_nxt <= B_RETIRE;
---        else
-            arbiter.state_nxt <= IDLE;
---        end if;
-        end if;
+    -- any current requests? --
+    data_req_current <= (data_req_i.re or data_req_i.we) when (PORT_DATA_READ_ONLY = false) else
+        data_req_i.re;
+    inst_req_current <= (inst_req_i.re or inst_req_i.we) when (PORT_INST_READ_ONLY = false) else
+        inst_req_i.re;
 
-      when A_RETIRE => -- retire port A pending access
-      -- ------------------------------------------------------------
-        arbiter.bus_sel   <= '0'; -- access from port A
-        arbiter.we_trig   <= a_wr_req_buf;
-        arbiter.re_trig   <= a_rd_req_buf;
-        arbiter.state_nxt <= A_BUSY;
+    -- any pending requests? --
+    data_req_pending <= (data_rd_req_buf or data_wr_req_buf) when (PORT_DATA_READ_ONLY = false) else
+        data_rd_req_buf;
+    inst_req_pending <= (inst_rd_req_buf or inst_wr_req_buf) when (PORT_INST_READ_ONLY = false) else
+        inst_rd_req_buf;
 
-      when B_BUSY => -- port B pending access
-      -- ------------------------------------------------------------
-        arbiter.bus_sel <= '1'; -- access from port B
-        if (x_rsp_i.err = '1') or (x_rsp_i.ack = '1') then
-          if (a_req_pending = '1') or (a_req_current = '1') then -- any request from A?
-            arbiter.state_nxt <= A_RETIRE;
-          else
-            arbiter.state_nxt <= IDLE;
-          end if;
-        end if;
+    -- FSM --
+    arbiter_comb : process (arbiter, data_req_current, inst_req_current, data_req_pending, inst_req_pending,
+        data_rd_req_buf, data_wr_req_buf, inst_rd_req_buf, inst_wr_req_buf, peri_rsp_i)
+    begin
+        -- arbiter defaults --
+        arbiter.state_nxt <= arbiter.state;
+        arbiter.bus_sel <= '0';
+        arbiter.we_trig <= '0';
+        arbiter.re_trig <= '0';
 
-      when B_RETIRE => -- retire port B pending access
-      -- ------------------------------------------------------------
-        arbiter.bus_sel   <= '1'; -- access from port B
-        arbiter.we_trig   <= b_wr_req_buf;
-        arbiter.re_trig   <= b_rd_req_buf;
-        arbiter.state_nxt <= B_BUSY;
+        -- state machine --
+        case arbiter.state is
 
-      when others => -- undefined
-      -- ------------------------------------------------------------
-        arbiter.state_nxt <= IDLE;
+            when IDLE => -- wait for requests
+                -- ------------------------------------------------------------
+                if (data_req_current = '1') then -- current request from port A?
+                    arbiter.bus_sel <= '0';
+                    arbiter.state_nxt <= DATA_BUSY;
+                elsif (data_req_pending = '1') then -- pending request from port A?
+                    arbiter.bus_sel <= '0';
+                    arbiter.state_nxt <= DATA_RETIRE;
+                elsif (inst_req_current = '1') then -- pending request from port B?
+                    arbiter.bus_sel <= '1';
+                    arbiter.state_nxt <= INST_BUSY;
+                elsif (inst_req_pending = '1') then -- current request from port B?
+                    arbiter.bus_sel <= '1';
+                    arbiter.state_nxt <= INST_RETIRE;
+                end if;
 
-    end case;
-  end process arbiter_comb;
+            when DATA_BUSY => -- port A pending access
+                -- ------------------------------------------------------------
+                arbiter.bus_sel <= '0'; -- access from port A
+                if (peri_rsp_i.err = '1') or (peri_rsp_i.ack = '1') then
+                    -- [COMMENT NOTE] Direct return to IDLE to further promote port A access requests.
+                    --        if (inst_req_pending = '1') or (inst_req_current = '1') then -- any request from B?
+                    --          arbiter.state_nxt <= B_RETIRE;
+                    --        else
+                    arbiter.state_nxt <= IDLE;
+                    --        end if;
+                end if;
 
+            when DATA_RETIRE => -- retire port A pending access
+                -- ------------------------------------------------------------
+                arbiter.bus_sel <= '0'; -- access from port A
+                arbiter.we_trig <= data_wr_req_buf;
+                arbiter.re_trig <= data_rd_req_buf;
+                arbiter.state_nxt <= DATA_BUSY;
 
-  -- Peripheral Bus Switch ------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  x_req_o.addr <= a_req_i.addr when (arbiter.bus_sel = '0') else b_req_i.addr;
+            when INST_BUSY => -- port B pending access
+                -- ------------------------------------------------------------
+                arbiter.bus_sel <= '1'; -- access from port B
+                if (peri_rsp_i.err = '1') or (peri_rsp_i.ack = '1') then
+                    if (data_req_pending = '1') or (data_req_current = '1') then -- any request from A?
+                        arbiter.state_nxt <= DATA_RETIRE;
+                    else
+                        arbiter.state_nxt <= IDLE;
+                    end if;
+                end if;
 
-  x_req_o.data <= b_req_i.data when (PORT_A_READ_ONLY = true) else
-                  a_req_i.data when (PORT_B_READ_ONLY = true) else
-                  a_req_i.data when (arbiter.bus_sel = '0')   else b_req_i.data;
+            when INST_RETIRE => -- retire port B pending access
+                -- ------------------------------------------------------------
+                arbiter.bus_sel <= '1'; -- access from port B
+                arbiter.we_trig <= inst_wr_req_buf;
+                arbiter.re_trig <= inst_rd_req_buf;
+                arbiter.state_nxt <= INST_BUSY;
 
-  x_req_o.ben  <= b_req_i.ben when (PORT_A_READ_ONLY = true) else
-                  a_req_i.ben when (PORT_B_READ_ONLY = true) else
-                  a_req_i.ben when (arbiter.bus_sel = '0')   else b_req_i.ben;
+            when others => -- undefined
+                -- ------------------------------------------------------------
+                arbiter.state_nxt <= IDLE;
 
-  x_req_o.priv <= a_req_i.priv when (arbiter.bus_sel = '0') else b_req_i.priv;
-  x_req_o.src  <= a_req_i.src  when (arbiter.bus_sel = '0') else b_req_i.src;
+        end case;
+    end process arbiter_comb;
 
-  x_bus_we     <= a_req_i.we when (arbiter.bus_sel = '0') else b_req_i.we;
-  x_bus_re     <= a_req_i.re when (arbiter.bus_sel = '0') else b_req_i.re;
-  x_req_o.we   <= x_bus_we or arbiter.we_trig;
-  x_req_o.re   <= x_bus_re or arbiter.re_trig;
+    -- Peripheral Bus Switch ------------------------------------------------------------------
+    -- -------------------------------------------------------------------------------------------
+    peri_req_o.addr <= data_req_i.addr when (arbiter.bus_sel = '0') else
+                       inst_req_i.addr;
 
-  a_rsp_o.data <= x_rsp_i.data;
-  b_rsp_o.data <= x_rsp_i.data;
+    peri_req_o.data <= inst_req_i.data when (PORT_DATA_READ_ONLY = true) else
+                       data_req_i.data when (PORT_INST_READ_ONLY = true) else
+                       data_req_i.data when (arbiter.bus_sel = '0') else
+                       inst_req_i.data;
 
-  a_bus_ack    <= x_rsp_i.ack when (arbiter.bus_sel = '0') else '0';
-  b_bus_ack    <= x_rsp_i.ack when (arbiter.bus_sel = '1') else '0';
-  a_rsp_o.ack  <= a_bus_ack;
-  b_rsp_o.ack  <= b_bus_ack;
+    peri_req_o.ben <= inst_req_i.ben when (PORT_DATA_READ_ONLY = true) else
+                      data_req_i.ben when (PORT_INST_READ_ONLY = true) else
+                      data_req_i.ben when (arbiter.bus_sel = '0') else
+                      inst_req_i.ben;
 
-  a_bus_err    <= x_rsp_i.err when (arbiter.bus_sel = '0') else '0';
-  b_bus_err    <= x_rsp_i.err when (arbiter.bus_sel = '1') else '0';
-  a_rsp_o.err  <= a_bus_err;
-  b_rsp_o.err  <= b_bus_err;
+    peri_req_o.priv <= data_req_i.priv when (arbiter.bus_sel = '0') else
+                       inst_req_i.priv;
+    peri_req_o.src <= data_req_i.src when (arbiter.bus_sel = '0') else
+                      inst_req_i.src;
 
+    peri_bus_we <= data_req_i.we when (arbiter.bus_sel = '0') else
+                   inst_req_i.we;
+    peri_bus_re <= data_req_i.re when (arbiter.bus_sel = '0') else
+                   inst_req_i.re;
+    peri_req_o.we <= peri_bus_we or arbiter.we_trig;
+    peri_req_o.re <= peri_bus_re or arbiter.re_trig;
+
+    data_rsp_o.data <= peri_rsp_i.data;
+    inst_rsp_o.data <= peri_rsp_i.data;
+
+    data_bus_ack <= peri_rsp_i.ack when (arbiter.bus_sel = '0') else
+                    '0';
+    inst_bus_ack <= peri_rsp_i.ack when (arbiter.bus_sel = '1') else
+                    '0';
+    data_rsp_o.ack <= data_bus_ack;
+    inst_rsp_o.ack <= inst_bus_ack;
+
+    data_bus_err <= peri_rsp_i.err when (arbiter.bus_sel = '0') else
+                    '0';
+    inst_bus_err <= peri_rsp_i.err when (arbiter.bus_sel = '1') else
+                    '0';
+    data_rsp_o.err <= data_bus_err;
+    inst_rsp_o.err <= inst_bus_err;
 
 end neorv32_busswitch_rtl;
