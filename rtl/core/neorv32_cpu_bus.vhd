@@ -357,17 +357,17 @@ begin
   -- M mode: always allow if lock bit not set, otherwise check permission
   pmp_permission_gen:
   for r in 0 to PMP_NUM_REGIONS-1 generate
-    pmp.perm_ex(r) <= pmp_ctrl_i(r)(pmp_cfg_x_c) or (not pmp_ctrl_i(r)(pmp_cfg_l_c)) when (ctrl_i.cpu_priv = priv_mode_m_c) else pmp_ctrl_i(r)(pmp_cfg_x_c);
-    pmp.perm_rd(r) <= pmp_ctrl_i(r)(pmp_cfg_r_c) or (not pmp_ctrl_i(r)(pmp_cfg_l_c)) when (ctrl_i.bus_priv = priv_mode_m_c) else pmp_ctrl_i(r)(pmp_cfg_r_c);
-    pmp.perm_wr(r) <= pmp_ctrl_i(r)(pmp_cfg_w_c) or (not pmp_ctrl_i(r)(pmp_cfg_l_c)) when (ctrl_i.bus_priv = priv_mode_m_c) else pmp_ctrl_i(r)(pmp_cfg_w_c);
+--    pmp.perm_ex(r) <= pmp_ctrl_i(r)(pmp_cfg_x_c) or (not pmp_ctrl_i(r)(pmp_cfg_l_c)) when (ctrl_i.cpu_priv = priv_mode_m_c) else pmp_ctrl_i(r)(pmp_cfg_x_c);
+--    pmp.perm_rd(r) <= pmp_ctrl_i(r)(pmp_cfg_r_c) or (not pmp_ctrl_i(r)(pmp_cfg_l_c)) when (ctrl_i.bus_priv = priv_mode_m_c) else pmp_ctrl_i(r)(pmp_cfg_r_c);
+--    pmp.perm_wr(r) <= pmp_ctrl_i(r)(pmp_cfg_w_c) or (not pmp_ctrl_i(r)(pmp_cfg_l_c)) when (ctrl_i.bus_priv = priv_mode_m_c) else pmp_ctrl_i(r)(pmp_cfg_w_c);
   end generate;
 
 
   -- check for access fault (using static prioritization) --
   -- default: fault if not M-mode --
-  pmp.fail_ex(PMP_NUM_REGIONS) <= '1' when (ctrl_i.cpu_priv /= priv_mode_m_c) else '0';
-  pmp.fail_rd(PMP_NUM_REGIONS) <= '1' when (ctrl_i.bus_priv /= priv_mode_m_c) else '0';
-  pmp.fail_wr(PMP_NUM_REGIONS) <= '1' when (ctrl_i.bus_priv /= priv_mode_m_c) else '0';
+  pmp.fail_ex(PMP_NUM_REGIONS) <= '0';
+  pmp.fail_rd(PMP_NUM_REGIONS) <= '0';
+  pmp.fail_wr(PMP_NUM_REGIONS) <= '0';
   -- this is a *structural* description of a prioritization logic implemented as a multiplexer chain --
   pmp_chech_fault:
   for r in PMP_NUM_REGIONS-1 downto 0 generate -- start with lowest priority

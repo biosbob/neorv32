@@ -328,7 +328,6 @@ package neorv32_package is
         we : std_ulogic; -- write request (single-shot)
         re : std_ulogic; -- read request (single-shot)
         src : std_ulogic; -- access source (1=instruction fetch, 0=data access)
-        priv : std_ulogic; -- set if privileged (machine-mode) access
     end record;
 
     -- Internal Bus Interface: Response -------------------------------------------------------
@@ -816,13 +815,11 @@ package neorv32_package is
         bus_mo_we : std_ulogic; -- memory address and data output register write enable
         bus_fence : std_ulogic; -- fence operation
         bus_fencei : std_ulogic; -- fence.i operation
-        bus_priv : std_ulogic; -- effective privilege level for load/store
         -- instruction word --
         ir_funct3 : std_ulogic_vector(02 downto 0); -- funct3 bit field
         ir_funct12 : std_ulogic_vector(11 downto 0); -- funct12 bit field
         ir_opcode : std_ulogic_vector(06 downto 0); -- opcode bit field
         -- cpu status --
-        cpu_priv : std_ulogic; -- effective privilege mode
         cpu_sleep : std_ulogic; -- set when CPU is in sleep mode
         cpu_trap : std_ulogic; -- set when CPU is entering trap exec
         cpu_debug : std_ulogic; -- set when CPU is in debug mode
@@ -848,11 +845,9 @@ package neorv32_package is
         bus_mo_we => '0',
         bus_fence => '0',
         bus_fencei => '0',
-        bus_priv => '0',
         ir_funct3 => (others => '0'),
         ir_funct12 => (others => '0'),
         ir_opcode => (others => '0'),
-        cpu_priv => '0',
         cpu_sleep => '0',
         cpu_trap => '0',
         cpu_debug => '0'

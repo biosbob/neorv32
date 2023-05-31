@@ -1154,7 +1154,7 @@ begin
   ctrl_o.bus_mo_we    <= ctrl.bus_mo_we;
   ctrl_o.bus_fence    <= ctrl.bus_fence;
   ctrl_o.bus_fencei   <= ctrl.bus_fencei;
-  ctrl_o.bus_priv     <= csr.mstatus_mpp when (csr.mstatus_mprv = '1') else csr.privilege_eff; -- effective privilege level for loads/stores in M-mode
+---  ctrl_o.bus_priv     <= csr.mstatus_mpp when (csr.mstatus_mprv = '1') else csr.privilege_eff; -- effective privilege level for loads/stores in M-mode
 
   -- instruction word bit fields --
   ctrl_o.ir_funct3    <= execute_engine.ir(instr_funct3_msb_c  downto instr_funct3_lsb_c);
@@ -1162,7 +1162,7 @@ begin
   ctrl_o.ir_opcode    <= execute_engine.ir(instr_opcode_msb_c  downto instr_opcode_lsb_c);
 
   -- cpu status --
-  ctrl_o.cpu_priv     <= csr.privilege_eff;
+---  ctrl_o.cpu_priv     <= csr.privilege_eff;
   ctrl_o.cpu_sleep    <= '1' when (execute_engine.state = CPU_SLEEP) else '0';
   ctrl_o.cpu_trap     <= trap_ctrl.env_ack;
   ctrl_o.cpu_debug    <= debug_ctrl.running;

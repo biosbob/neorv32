@@ -205,8 +205,6 @@ begin
                       data_req_i.ben when (arbiter.bus_sel = '0') else
                       inst_req_i.ben;
 
-    peri_req_o.priv <= data_req_i.priv when (arbiter.bus_sel = '0') else
-                       inst_req_i.priv;
     peri_req_o.src <= data_req_i.src when (arbiter.bus_sel = '0') else
                       inst_req_i.src;
 
