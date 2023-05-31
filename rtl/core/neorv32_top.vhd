@@ -115,8 +115,6 @@ architecture neorv32_top_rtl of neorv32_top is
     -- CPU status --
     signal cpu_debug : std_ulogic; -- cpu is in debug mode
     signal cpu_sleep : std_ulogic; -- cpu is in sleep mode
-    signal i_fence : std_ulogic; -- instruction fence
-    signal d_fence : std_ulogic; -- data fence
 
     -- debug core interface (DCI) --
     constant dci_ndmrstn_c : std_ulogic := '1';
@@ -294,8 +292,6 @@ begin
         rstn_i => rstn_int,
         sleep_o => cpu_sleep,
         debug_o => cpu_debug,
-        ifence_o => i_fence,
-        dfence_o => d_fence,
         -- interrupts --
         msi_i => msw_irq_i,
         mei_i => mext_irq_i,

@@ -813,8 +813,8 @@ package neorv32_package is
         bus_req_rd : std_ulogic; -- trigger memory read request
         bus_req_wr : std_ulogic; -- trigger memory write request
         bus_mo_we : std_ulogic; -- memory address and data output register write enable
-        bus_fence : std_ulogic; -- fence operation
-        bus_fencei : std_ulogic; -- fence.i operation
+--        bus_fence : std_ulogic; -- fence operation
+--        bus_fencei : std_ulogic; -- fence.i operation
         -- instruction word --
         ir_funct3 : std_ulogic_vector(02 downto 0); -- funct3 bit field
         ir_funct12 : std_ulogic_vector(11 downto 0); -- funct12 bit field
@@ -843,8 +843,6 @@ package neorv32_package is
         bus_req_rd => '0',
         bus_req_wr => '0',
         bus_mo_we => '0',
-        bus_fence => '0',
-        bus_fencei => '0',
         ir_funct3 => (others => '0'),
         ir_funct12 => (others => '0'),
         ir_opcode => (others => '0'),
