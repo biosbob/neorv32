@@ -279,9 +279,6 @@ begin
         FAST_MUL_EN => true,
         FAST_SHIFT_EN => true,
         CPU_IPB_ENTRIES => 2,
-        -- Physical Memory Protection (PMP) --
-        PMP_NUM_REGIONS => 0,
-        PMP_MIN_GRANULARITY => 4,
         -- Hardware Performance Monitors (HPM) --
         HPM_NUM_CNTS => 0,
         HPM_CNT_WIDTH => 0

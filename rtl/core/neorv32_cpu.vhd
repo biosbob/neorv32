@@ -66,9 +66,6 @@ entity neorv32_cpu is
         FAST_MUL_EN : boolean; -- use DSPs for M extension's multiplier
         FAST_SHIFT_EN : boolean; -- use barrel shifter for shift operations
         CPU_IPB_ENTRIES : natural; -- entries in instruction prefetch buffer, has to be a power of 2, min 1
-        -- Physical Memory Protection (PMP) --
-        PMP_NUM_REGIONS : natural; -- number of regions (0..16)
-        PMP_MIN_GRANULARITY : natural; -- minimal region granularity in bytes, has to be a power of 2, min 4 bytes
         -- Hardware Performance Monitors (HPM) --
         HPM_NUM_CNTS : natural; -- number of implemented HPM counters (0..29)
         HPM_CNT_WIDTH : natural -- total size of HPM counters (0..64)
@@ -181,14 +178,6 @@ begin
     assert not (ipb_override_c = true) report
     "NEORV32 CPU CONFIG WARNING! Overriding <CPU_IPB_ENTRIES> configuration (setting =2) because C ISA extension is enabled." severity warning;
 
-    -- PMP --
-    assert not (PMP_NUM_REGIONS > 16) report
-    "NEORV32 CPU CONFIG ERROR! Number of PMP regions <PMP_NUM_REGIONS> out of valid range (0..16)." severity error;
-    assert not ((is_power_of_two_f(PMP_MIN_GRANULARITY) = false) and (PMP_NUM_REGIONS > 0)) report
-    "NEORV32 CPU CONFIG ERROR! <PMP_MIN_GRANULARITY> has to be a power of two." severity error;
-    assert not ((PMP_MIN_GRANULARITY < 4) and (PMP_NUM_REGIONS > 0)) report
-    "NEORV32 CPU CONFIG ERROR! <PMP_MIN_GRANULARITY> has to be >= 4 bytes." severity error;
-
     -- HPM counters --
     assert not ((CPU_EXTENSION_RISCV_Zihpm = true) and (HPM_NUM_CNTS > 29)) report
     "NEORV32 CPU CONFIG ERROR! Number of HPM counters <HPM_NUM_CNTS> out of valid range (0..29)." severity error;
@@ -232,9 +221,6 @@ begin
             FAST_MUL_EN => FAST_MUL_EN, -- use DSPs for M extension's multiplier
             FAST_SHIFT_EN => FAST_SHIFT_EN, -- use barrel shifter for shift operations
             CPU_IPB_ENTRIES => ipb_depth_c, -- entries is instruction prefetch buffer, has to be a power of 2, min 1
-            -- Physical memory protection (PMP) --
-            PMP_NUM_REGIONS => PMP_NUM_REGIONS, -- number of regions (0..16)
-            PMP_MIN_GRANULARITY => PMP_MIN_GRANULARITY, -- minimal region granularity in bytes, has to be a power of 2, min 4 bytes
             -- Hardware Performance Monitors (HPM) --
             HPM_NUM_CNTS => HPM_NUM_CNTS, -- number of implemented HPM counters (0..29)
             HPM_CNT_WIDTH => HPM_CNT_WIDTH -- total size of HPM counters
@@ -360,10 +346,6 @@ begin
     -- Bus Interface (Load/Store Unit) --------------------------------------------------------
     -- -------------------------------------------------------------------------------------------
     neorv32_cpu_bus_inst : entity neorv32.neorv32_cpu_bus
-        generic map(
-            PMP_NUM_REGIONS => PMP_NUM_REGIONS, -- number of regions (0..16)
-            PMP_MIN_GRANULARITY => PMP_MIN_GRANULARITY -- minimal region granularity in bytes, has to be a power of 2, min 4 bytes
-        )
         port map(
             -- global control --
             clk_i => clk_i, -- global clock, rising edge

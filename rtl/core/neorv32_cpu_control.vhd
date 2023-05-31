@@ -76,9 +76,6 @@ entity neorv32_cpu_control is
         FAST_MUL_EN : boolean; -- use DSPs for M extension's multiplier
         FAST_SHIFT_EN : boolean; -- use barrel shifter for shift operations
         CPU_IPB_ENTRIES : natural; -- entries in instruction prefetch buffer, has to be a power of 2, min 1
-        -- Physical memory protection (PMP) --
-        PMP_NUM_REGIONS : natural; -- number of regions (0..16)
-        PMP_MIN_GRANULARITY : natural; -- minimal region granularity in bytes, has to be a power of 2, min 4 bytes
         -- Hardware Performance Monitors (HPM) --
         HPM_NUM_CNTS : natural; -- number of implemented HPM counters (0..29)
         HPM_CNT_WIDTH : natural -- total size of HPM counters (0..64)
@@ -301,21 +298,6 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     end record;
     signal hpmevent : hpmevent_t;
     signal hpmevent_rd : hpmevent_rd_t;
-
-    -- physical memory protection CSRs --
-    type pmp_cfg_t is array (0 to PMP_NUM_REGIONS - 1) of std_ulogic_vector(7 downto 0);
-    type pmp_addr_t is array (0 to PMP_NUM_REGIONS - 1) of std_ulogic_vector(XLEN - 1 downto 0);
-    type pmp_cfg_rd_t is array (0 to 03) of std_ulogic_vector(XLEN - 1 downto 0);
-    type pmp_addr_rd_t is array (0 to 15) of std_ulogic_vector(XLEN - 1 downto 0);
-    type pmp_t is record
-        we_cfg : std_ulogic_vector(03 downto 0);
-        we_addr : std_ulogic_vector(15 downto 0);
-        cfg : pmp_cfg_t;
-        addr : pmp_addr_t;
-    end record;
-    signal pmp : pmp_t;
-    signal pmp_cfg_rd : pmp_cfg_rd_t;
-    signal pmp_addr_rd : pmp_addr_rd_t;
 
     -- counter CSRs --
     type cnt_dat_t is array (0 to 31) of std_ulogic_vector(XLEN - 1 downto 0);
@@ -1162,19 +1144,6 @@ begin
                 csr_marchid_c | csr_mimpid_c | csr_mhartid_c | csr_mconfigptr_c | csr_mxisa_c =>
                 csr_reg_valid <= '1';
 
-                -- physical memory protection (PMP) --
-            when csr_pmpcfg0_c | csr_pmpcfg1_c | csr_pmpcfg2_c | csr_pmpcfg3_c | csr_pmpcfg4_c | csr_pmpcfg5_c | csr_pmpcfg6_c | csr_pmpcfg7_c | -- configuration
-                csr_pmpcfg8_c | csr_pmpcfg9_c | csr_pmpcfg10_c | csr_pmpcfg11_c | csr_pmpcfg12_c | csr_pmpcfg13_c | csr_pmpcfg14_c | csr_pmpcfg15_c |
-                csr_pmpaddr0_c | csr_pmpaddr1_c | csr_pmpaddr2_c | csr_pmpaddr3_c | csr_pmpaddr4_c | csr_pmpaddr5_c | csr_pmpaddr6_c | csr_pmpaddr7_c | -- address
-                csr_pmpaddr8_c | csr_pmpaddr9_c | csr_pmpaddr10_c | csr_pmpaddr11_c | csr_pmpaddr12_c | csr_pmpaddr13_c | csr_pmpaddr14_c | csr_pmpaddr15_c |
-                csr_pmpaddr16_c | csr_pmpaddr17_c | csr_pmpaddr18_c | csr_pmpaddr19_c | csr_pmpaddr20_c | csr_pmpaddr21_c | csr_pmpaddr22_c | csr_pmpaddr23_c |
-                csr_pmpaddr24_c | csr_pmpaddr25_c | csr_pmpaddr26_c | csr_pmpaddr27_c | csr_pmpaddr28_c | csr_pmpaddr29_c | csr_pmpaddr30_c | csr_pmpaddr31_c |
-                csr_pmpaddr32_c | csr_pmpaddr33_c | csr_pmpaddr34_c | csr_pmpaddr35_c | csr_pmpaddr36_c | csr_pmpaddr37_c | csr_pmpaddr38_c | csr_pmpaddr39_c |
-                csr_pmpaddr40_c | csr_pmpaddr41_c | csr_pmpaddr42_c | csr_pmpaddr43_c | csr_pmpaddr44_c | csr_pmpaddr45_c | csr_pmpaddr46_c | csr_pmpaddr47_c |
-                csr_pmpaddr48_c | csr_pmpaddr49_c | csr_pmpaddr50_c | csr_pmpaddr51_c | csr_pmpaddr52_c | csr_pmpaddr53_c | csr_pmpaddr54_c | csr_pmpaddr55_c |
-                csr_pmpaddr56_c | csr_pmpaddr57_c | csr_pmpaddr58_c | csr_pmpaddr59_c | csr_pmpaddr60_c | csr_pmpaddr61_c | csr_pmpaddr62_c | csr_pmpaddr63_c =>
-                csr_reg_valid <= bool_to_ulogic_f(boolean(PMP_NUM_REGIONS > 0)); -- valid if PMP implemented
-
                 -- hardware performance monitors (HPM) --
             when csr_hpmcounter3_c | csr_hpmcounter4_c | csr_hpmcounter5_c | csr_hpmcounter6_c | csr_hpmcounter7_c | csr_hpmcounter8_c | -- user counters LOW
                 csr_hpmcounter9_c | csr_hpmcounter10_c | csr_hpmcounter11_c | csr_hpmcounter12_c | csr_hpmcounter13_c | csr_hpmcounter14_c |
@@ -1946,84 +1915,6 @@ begin
     csr.privilege_eff <= priv_mode_m_c when (CPU_EXTENSION_RISCV_Sdext = true) and (debug_ctrl.running = '1') else
                          csr.privilege;
 
-    -- Physical Memory Protection (PMP) CSRs --------------------------------------------------
-    -- -------------------------------------------------------------------------------------------
-    -- write enable decoder --
-    pmp_we : process (csr)
-    begin
-        -- Configuration registers --
-        pmp.we_cfg <= (others => '0');
-        if (csr.addr(11 downto 2) = csr_pmpcfg0_c(11 downto 2)) and (csr.we = '1') then
-            pmp.we_cfg(to_integer(unsigned(csr.addr(1 downto 0)))) <= '1';
-        end if;
-        -- Address registers --
-        pmp.we_addr <= (others => '0');
-        if (csr.addr(11 downto 4) = csr_pmpaddr0_c(11 downto 4)) and (csr.we = '1') then
-            pmp.we_addr(to_integer(unsigned(csr.addr(3 downto 0)))) <= '1';
-        end if;
-    end process pmp_we;
-
-    -- PMP registers --
-    pmp_reg_gen :
-    for i in 0 to PMP_NUM_REGIONS - 1 generate
-        pmp_reg : process (rstn_i, clk_i)
-        begin
-            if (rstn_i = '0') then
-                pmp.cfg(i) <= (others => '0');
-                pmp.addr(i) <= (others => '0');
-            elsif rising_edge(clk_i) then
-                -- configuration --
-                if (pmp.we_cfg(i/4) = '1') and (pmp.cfg(i)(7) = '0') then -- unlocked write access
-                    pmp.cfg(i)(2 downto 0) <= csr.wdata((i mod 4) * 8 + 2 downto (i mod 4) * 8 + 0); -- X (execute), W (write), R (read)
-                    if (PMP_MIN_GRANULARITY > 4) and (csr.wdata((i mod 4) * 8 + 4 downto (i mod 4) * 8 + 3) = pmp_mode_na4_c) then
-                        pmp.cfg(i)(4 downto 3) <= pmp_mode_off_c; -- NA4 not available, fall back to OFF
-                    else
-                        pmp.cfg(i)(4 downto 3) <= csr.wdata((i mod 4) * 8 + 4 downto (i mod 4) * 8 + 3); -- A (mode)
-                    end if;
-                    pmp.cfg(i)(6 downto 5) <= "00"; -- reserved
-                    pmp.cfg(i)(7) <= csr.wdata((i mod 4) * 8 + 7); -- L (locked)
-                end if;
-                -- address --
-                if (pmp.we_addr(i) = '1') and (pmp.cfg(i)(7) = '0') then -- unlocked write access
-                    if (i < PMP_NUM_REGIONS - 1) then
-                        if (pmp.cfg(i + 1)(7) = '0') or (pmp.cfg(i + 1)(4 downto 3) /= pmp_mode_tor_c) then -- cfg(i+1) not "LOCKED TOR"
-                            pmp.addr(i) <= "00" & csr.wdata(XLEN - 3 downto 0);
-                        end if;
-                    else -- very last entry
-                        pmp.addr(i) <= "00" & csr.wdata(XLEN - 3 downto 0);
-                    end if;
-                end if;
-            end if;
-        end process pmp_reg;
-    end generate;
-
-    -- PMP output to bus unit and CSR read-back --
-    pmp_connect : process (pmp)
-    begin
-        pmp_ctrl_o <= (others => (others => '0'));
-        pmp_addr_o <= (others => (others => '0'));
-        pmp_cfg_rd <= (others => (others => '0'));
-        pmp_addr_rd <= (others => (others => '0'));
-        for i in 0 to PMP_NUM_REGIONS - 1 loop
-            pmp_ctrl_o(i) <= pmp.cfg(i);
-            pmp_addr_o(i) <= pmp.addr(i) & "00"; -- word aligned address
-            pmp_cfg_rd(i/4)(8 * (i mod 4) + 7 downto 8 * (i mod 4) + 0) <= pmp.cfg(i);
-            pmp_addr_rd(i)(XLEN - 1 downto index_size_f(PMP_MIN_GRANULARITY) - 2) <= pmp.addr(i)(XLEN - 1 downto index_size_f(PMP_MIN_GRANULARITY) - 2);
-            if (PMP_MIN_GRANULARITY = 8) then -- bit [G-1] reads as zero in TOR or OFF mode
-                if (pmp.cfg(i)(4) = '0') then -- TOR/OFF
-                    pmp_addr_rd(i)(index_size_f(PMP_MIN_GRANULARITY) - 1) <= '0';
-                end if;
-            elsif (PMP_MIN_GRANULARITY > 8) then
-                -- in NAPOT mode, bits [G-2:0] must read as one
-                pmp_addr_rd(i)(index_size_f(PMP_MIN_GRANULARITY) - 2 downto 0) <= (others => '1');
-                -- in TOR or OFF mode, bits [G-1:0] must read as zero
-                if (pmp.cfg(i)(4) = '0') then -- TOR/OFF
-                    pmp_addr_rd(i)(index_size_f(PMP_MIN_GRANULARITY) - 1 downto 0) <= (others => '0');
-                end if;
-            end if;
-        end loop;
-    end process pmp_connect;
-
     -- Hardware Performance Monitors (HMP) Counter Event Configuration CSRs -------------------
     -- -------------------------------------------------------------------------------------------
     -- write enable decoder --
@@ -2157,23 +2048,6 @@ begin
                     csr.rdata(07) <= trap_ctrl.irq_pnd(irq_mti_irq_c);
                     csr.rdata(11) <= trap_ctrl.irq_pnd(irq_mei_irq_c);
                     csr.rdata(31 downto 16) <= trap_ctrl.irq_pnd(irq_firq_15_c downto irq_firq_0_c);
-
-                    -- physical memory protection --
-                    -- --------------------------------------------------------------------
-                    -- region configuration --
-                when csr_pmpcfg0_c | csr_pmpcfg1_c | csr_pmpcfg2_c | csr_pmpcfg3_c =>
-                    if (PMP_NUM_REGIONS > 0) then
-                        csr.rdata <= pmp_cfg_rd(to_integer(unsigned(csr.addr(1 downto 0))));
-                    end if;
-
-                    -- region address --
-                when csr_pmpaddr0_c | csr_pmpaddr1_c | csr_pmpaddr2_c | csr_pmpaddr3_c |
-                    csr_pmpaddr4_c | csr_pmpaddr5_c | csr_pmpaddr6_c | csr_pmpaddr7_c |
-                    csr_pmpaddr8_c | csr_pmpaddr9_c | csr_pmpaddr10_c | csr_pmpaddr11_c |
-                    csr_pmpaddr12_c | csr_pmpaddr13_c | csr_pmpaddr14_c | csr_pmpaddr15_c =>
-                    if (PMP_NUM_REGIONS > 0) then
-                        csr.rdata <= pmp_addr_rd(to_integer(unsigned(csr.addr(3 downto 0))));
-                    end if;
 
                     -- machine counter setup --
                     -- --------------------------------------------------------------------
@@ -2517,7 +2391,7 @@ csr.rdata(04) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zicond); -- Zicond: condit
 csr.rdata(05) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zfinx); -- Zfinx: FPU using x registers
 --        csr.rdata(06) <= '0'; -- reserved
 csr.rdata(07) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zicntr); -- Zicntr: base counters
-csr.rdata(08) <= bool_to_ulogic_f(boolean(PMP_NUM_REGIONS > 0)); -- PMP: physical memory protection (Zspmp)
+csr.rdata(08) <= '0'; -- PMP: physical memory protection (Zspmp)
 csr.rdata(09) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zihpm); -- Zihpm: hardware performance monitors
 csr.rdata(10) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Sdext); -- Sdext: RISC-V (external) debug mode
 csr.rdata(11) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Sdtrig); -- Sdtrig: trigger module
