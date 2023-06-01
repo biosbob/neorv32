@@ -236,7 +236,6 @@ begin
             i_bus_re_o => ibus_req_o.re, -- read enable
             i_bus_ack_i => ibus_rsp_i.ack, -- bus transfer acknowledge
             i_bus_err_i => ibus_rsp_i.err, -- bus transfer error
-            i_pmp_fault_i => i_pmp_fault, -- instruction fetch pmp fault
             -- status input --
             alu_cp_done_i => cp_done, -- ALU iterative operation done
             alu_exc_i => alu_exc, -- ALU exception
@@ -260,9 +259,6 @@ begin
             mti_i => mti_i, -- machine timer interrupt
             -- fast interrupts (custom) --
             firq_i => firq_i, -- fast interrupt trigger
-            -- physical memory protection --
-            pmp_addr_o => pmp_addr, -- addresses
-            pmp_ctrl_o => pmp_ctrl, -- configs
             -- bus access exceptions --
             mar_i => mar, -- memory address register
             ma_load_i => ma_load, -- misaligned load data address

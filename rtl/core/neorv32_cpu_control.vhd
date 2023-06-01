@@ -91,7 +91,6 @@ entity neorv32_cpu_control is
         i_bus_re_o : out std_ulogic; -- read enable
         i_bus_ack_i : in std_ulogic; -- bus transfer acknowledge
         i_bus_err_i : in std_ulogic; -- bus transfer error
-        i_pmp_fault_i : in std_ulogic; -- instruction fetch pmp fault
         -- status input --
         alu_cp_done_i : in std_ulogic; -- ALU iterative operation done
         alu_exc_i : in std_ulogic; -- ALU exception
@@ -115,9 +114,6 @@ entity neorv32_cpu_control is
         mti_i : in std_ulogic; -- machine timer interrupt
         -- fast interrupts (custom) --
         firq_i : in std_ulogic_vector(15 downto 0);
-        -- physical memory protection --
-        pmp_addr_o : out pmp_addr_if_t; -- addresses
-        pmp_ctrl_o : out pmp_ctrl_if_t; -- configs
         -- bus access exceptions --
         mar_i : in std_ulogic_vector(XLEN - 1 downto 0); -- memory address register
         ma_load_i : in std_ulogic; -- misaligned load data address
@@ -144,7 +140,6 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
         reset : std_ulogic;
         resp : std_ulogic; -- bus response
         a_err : std_ulogic; -- alignment error
-        pmp_err : std_ulogic; -- PMP error
     end record;
     signal fetch_engine : fetch_engine_t;
 
@@ -364,7 +359,6 @@ begin
             fetch_engine.restart <= '1'; -- set to reset IPB
             fetch_engine.unaligned <= '0'; -- always start at aligned address after reset
             fetch_engine.pc <= (others => '0');
-            fetch_engine.pmp_err <= '0';
         elsif rising_edge(clk_i) then
             -- previous state (for HPM) --
             fetch_engine.state_prev <= fetch_engine.state;
@@ -375,9 +369,6 @@ begin
             else -- buffer request
                 fetch_engine.restart <= fetch_engine.restart or fetch_engine.reset;
             end if;
-
-            -- register PMP fault --
-            fetch_engine.pmp_err <= i_pmp_fault_i;
 
             -- fsm --
             case fetch_engine.state is
@@ -445,8 +436,8 @@ begin
                          '0';
 
     -- IPB instruction data and status --
-    ipb.wdata(0) <= (i_bus_err_i or fetch_engine.pmp_err) & fetch_engine.a_err & i_bus_rdata_i(15 downto 00);
-    ipb.wdata(1) <= (i_bus_err_i or fetch_engine.pmp_err) & fetch_engine.a_err & i_bus_rdata_i(31 downto 16);
+    ipb.wdata(0) <= (i_bus_err_i) & fetch_engine.a_err & i_bus_rdata_i(15 downto 00);
+    ipb.wdata(1) <= (i_bus_err_i) & fetch_engine.a_err & i_bus_rdata_i(31 downto 16);
 
     -- IPB write enable --
     ipb.we(0) <= '1' when (fetch_engine.state = IF_PENDING) and (fetch_engine.resp = '1') and
