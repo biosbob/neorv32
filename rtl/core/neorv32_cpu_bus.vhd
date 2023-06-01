@@ -49,7 +49,6 @@ entity neorv32_cpu_bus is
         ctrl_i : in ctrl_bus_t; -- main control bus
         -- cpu instruction fetch interface --
         fetch_pc_i : in std_ulogic_vector(XLEN - 1 downto 0); -- PC for instruction fetch
-        i_pmp_fault_o : out std_ulogic; -- instruction fetch pmp fault
         -- cpu data access interface --
         addr_i : in std_ulogic_vector(XLEN - 1 downto 0); -- ALU result -> access address
         wdata_i : in std_ulogic_vector(XLEN - 1 downto 0); -- write data
@@ -60,9 +59,6 @@ entity neorv32_cpu_bus is
         ma_store_o : out std_ulogic; -- misaligned store data address
         be_load_o : out std_ulogic; -- bus error on load data access
         be_store_o : out std_ulogic; -- bus error on store data access
-        -- physical memory protection --
-        pmp_addr_i : in pmp_addr_if_t; -- addresses
-        pmp_ctrl_i : in pmp_ctrl_if_t; -- configs
         -- data bus --
         d_bus_addr_o : out std_ulogic_vector(XLEN - 1 downto 0); -- bus access address
         d_bus_rdata_i : in std_ulogic_vector(XLEN - 1 downto 0); -- bus read data
@@ -86,8 +82,6 @@ architecture neorv32_cpu_bus_rtl of neorv32_cpu_bus is
         pend_rd : std_ulogic; -- pending bus read access
         pend_wr : std_ulogic; -- pending bus write access
         acc_err : std_ulogic; -- bus access error
-        pmp_r_err : std_ulogic; -- pmp load fault
-        pmp_w_err : std_ulogic; -- pmp store fault
     end record;
     signal arbiter : bus_arbiter_t;
 
@@ -194,16 +188,12 @@ begin
     data_access_arbiter : process (rstn_i, clk_i)
     begin
         if (rstn_i = '0') then
-            arbiter.pmp_r_err <= '0';
-            arbiter.pmp_w_err <= '0';
             arbiter.acc_err <= '0';
             arbiter.pend_rd <= '0';
             arbiter.pend_wr <= '0';
         elsif rising_edge(clk_i) then
             -- access error buffer --
-            arbiter.acc_err <= d_bus_err_i or -- bus error
-                               (arbiter.pend_rd and arbiter.pmp_r_err) or -- PMP load fault
-                               (arbiter.pend_wr and arbiter.pmp_w_err); -- PMP store fault
+            arbiter.acc_err <= d_bus_err_i; -- bus error
             -- arbiter --
             if (arbiter.pend_rd = '0') and (arbiter.pend_wr = '0') then -- idle
                 arbiter.pend_rd <= ctrl_i.bus_req_rd;
@@ -225,8 +215,8 @@ begin
     be_store_o <= arbiter.pend_wr and arbiter.acc_err;
 
     -- access requests (all source signals are driven by registers!) --
-    d_bus_re_o <= ctrl_i.bus_req_rd and (not misaligned) and (not arbiter.pmp_r_err);
-    d_bus_we_o <= ctrl_i.bus_req_wr and (not misaligned) and (not arbiter.pmp_w_err);
+    d_bus_re_o <= ctrl_i.bus_req_rd and (not misaligned);
+    d_bus_we_o <= ctrl_i.bus_req_wr and (not misaligned);
 
 
 end neorv32_cpu_bus_rtl;

@@ -353,7 +353,6 @@ begin
             ctrl_i => ctrl, -- main control bus
             -- cpu instruction fetch interface --
             fetch_pc_i => fetch_pc, -- PC for instruction fetch
-            i_pmp_fault_o => i_pmp_fault, -- instruction fetch pmp fault
             -- cpu data access interface --
             addr_i => alu_add, -- ALU.add result -> access address
             wdata_i => rs2, -- write data
@@ -364,9 +363,6 @@ begin
             ma_store_o => ma_store, -- misaligned store data address
             be_load_o => be_load, -- bus error on load data access
             be_store_o => be_store, -- bus error on store data access
-            -- physical memory protection --
-            pmp_addr_i => pmp_addr, -- addresses
-            pmp_ctrl_i => pmp_ctrl, -- configurations
             -- data bus --
             d_bus_addr_o => dbus_req_o.addr, -- bus access address
             d_bus_rdata_i => dbus_rsp_i.data, -- bus read data
