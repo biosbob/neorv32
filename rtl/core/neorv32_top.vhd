@@ -253,55 +253,55 @@ begin
     -- CPU Core -------------------------------------------------------------------------------
     -- -------------------------------------------------------------------------------------------
     neorv32_cpu_inst : entity neorv32.neorv32_cpu
-    generic map(
-        -- General --
-        HART_ID => x"00000000",
-        VENDOR_ID => x"00000000",
-        CPU_BOOT_ADDR => cpu_boot_addr_c,
-        CPU_DEBUG_PARK_ADDR => dm_park_entry_c,
-        CPU_DEBUG_EXC_ADDR => dm_exc_entry_c,
-        -- RISC-V CPU Extensions --
-        CPU_EXTENSION_RISCV_B => false,
-        CPU_EXTENSION_RISCV_C => true,
-        CPU_EXTENSION_RISCV_E => false,
-        CPU_EXTENSION_RISCV_M => true,
-        CPU_EXTENSION_RISCV_U => false,
-        CPU_EXTENSION_RISCV_Zfinx => false,
-        CPU_EXTENSION_RISCV_Zicntr => true,
-        CPU_EXTENSION_RISCV_Zicond => false,
-        CPU_EXTENSION_RISCV_Zihpm => false,
-        CPU_EXTENSION_RISCV_Zifencei => false,
-        CPU_EXTENSION_RISCV_Zmmul => false,
-        CPU_EXTENSION_RISCV_Zxcfu => false,
-        CPU_EXTENSION_RISCV_Sdext => false,
-        CPU_EXTENSION_RISCV_Sdtrig => false,
-        -- Extension Options --
-        FAST_MUL_EN => true,
-        FAST_SHIFT_EN => true,
-        CPU_IPB_ENTRIES => 2,
-        -- Hardware Performance Monitors (HPM) --
-        HPM_NUM_CNTS => 0,
-        HPM_CNT_WIDTH => 0
-    )
-    port map(
-        -- global control --
-        clk_i => clk_i,
-        rstn_i => rstn_int,
-        sleep_o => cpu_sleep,
-        debug_o => cpu_debug,
-        -- interrupts --
-        msi_i => msw_irq_i,
-        mei_i => mext_irq_i,
-        mti_i => mtime_irq,
-        firq_i => fast_irq,
-        dbi_i => dci_halt_req_c,
-        -- instruction bus interface --
-        ibus_req_o => cpu_i_req,
-        ibus_rsp_i => cpu_i_rsp,
-        -- data bus interface --
-        dbus_req_o => cpu_d_req,
-        dbus_rsp_i => cpu_d_rsp
-    );
+        generic map(
+            -- General --
+            HART_ID => x"00000000",
+            VENDOR_ID => x"00000000",
+            CPU_BOOT_ADDR => cpu_boot_addr_c,
+            CPU_DEBUG_PARK_ADDR => dm_park_entry_c,
+            CPU_DEBUG_EXC_ADDR => dm_exc_entry_c,
+            -- RISC-V CPU Extensions --
+            CPU_EXTENSION_RISCV_B => false,
+            CPU_EXTENSION_RISCV_C => true,
+            CPU_EXTENSION_RISCV_E => false,
+            CPU_EXTENSION_RISCV_M => true,
+            CPU_EXTENSION_RISCV_U => false,
+            CPU_EXTENSION_RISCV_Zfinx => false,
+            CPU_EXTENSION_RISCV_Zicntr => true,
+            CPU_EXTENSION_RISCV_Zicond => false,
+            CPU_EXTENSION_RISCV_Zihpm => false,
+            CPU_EXTENSION_RISCV_Zifencei => false,
+            CPU_EXTENSION_RISCV_Zmmul => false,
+            CPU_EXTENSION_RISCV_Zxcfu => false,
+            CPU_EXTENSION_RISCV_Sdext => false,
+            CPU_EXTENSION_RISCV_Sdtrig => false,
+            -- Extension Options --
+            FAST_MUL_EN => true,
+            FAST_SHIFT_EN => true,
+            CPU_IPB_ENTRIES => 2,
+            -- Hardware Performance Monitors (HPM) --
+            HPM_NUM_CNTS => 0,
+            HPM_CNT_WIDTH => 0
+        )
+        port map(
+            -- global control --
+            clk_i => clk_i,
+            rstn_i => rstn_int,
+            sleep_o => cpu_sleep,
+            debug_o => cpu_debug,
+            -- interrupts --
+            msi_i => msw_irq_i,
+            mei_i => mext_irq_i,
+            mti_i => mtime_irq,
+            firq_i => fast_irq,
+            dbi_i => dci_halt_req_c,
+            -- instruction bus interface --
+            ibus_req_o => cpu_i_req,
+            ibus_rsp_i => cpu_i_rsp,
+            -- data bus interface --
+            dbus_req_o => cpu_d_req,
+            dbus_rsp_i => cpu_d_rsp
+        );
 
     -- fast interrupt requests (FIRQs) --
     fast_irq(00) <= wdt_irq; -- highest priority
@@ -321,19 +321,19 @@ begin
     fast_irq(14) <= '0';
     fast_irq(15) <= trng_irq; -- lowest priority
 
-     -- Core Complex Bus Switch ----------------------------------------------------------------
+    -- Core Complex Bus Switch ----------------------------------------------------------------
     -- -------------------------------------------------------------------------------------------
     neorv32_core_busswitch_inst : entity neorv32.neorv32_busswitch
-    port map(
-        clk_i => clk_i,
-        rstn_i => rstn_int,
-        data_req_i => cpu_d_req,
-        data_rsp_o => cpu_d_rsp,
-        inst_req_i => cpu_i_req,
-        inst_rsp_o => cpu_i_rsp,
-        peri_req_o => core_req,
-        peri_rsp_i => core_rsp
-    );
+        port map(
+            clk_i => clk_i,
+            rstn_i => rstn_int,
+            data_req_i => cpu_d_req,
+            data_rsp_o => cpu_d_rsp,
+            inst_req_i => cpu_i_req,
+            inst_rsp_o => cpu_i_rsp,
+            peri_req_o => core_req,
+            peri_rsp_i => core_rsp
+        );
 
     -- ****************************************************************************************************************************
     -- Bus System
@@ -342,18 +342,18 @@ begin
     -- Bus Keeper (BUSKEEPER) -----------------------------------------------------------------
     -- -------------------------------------------------------------------------------------------
     neorv32_bus_keeper_inst : entity neorv32.neorv32_bus_keeper
-    port map(
-        clk_i => clk_i,
-        rstn_i => rstn_int,
-        cpu_req_i => io_req,
-        cpu_rsp_o => rsp_bus(DEV_BUSKEEPER),
-        bus_req_i => soc_req,
-        bus_rsp_i => soc_rsp,
-        bus_err_o => bus_error,
-        bus_tmo_i => ext_timeout,
-        bus_ext_i => ext_access,
-        bus_xip_i => xip_access
-    );
+        port map(
+            clk_i => clk_i,
+            rstn_i => rstn_int,
+            cpu_req_i => io_req,
+            cpu_rsp_o => rsp_bus(DEV_BUSKEEPER),
+            bus_req_i => soc_req,
+            bus_rsp_i => soc_rsp,
+            bus_err_o => bus_error,
+            bus_tmo_i => ext_timeout,
+            bus_ext_i => ext_access,
+            bus_xip_i => xip_access
+        );
 
     -- global bus response ---
     bus_response : process (rsp_bus)
@@ -381,63 +381,63 @@ begin
     -- Processor-Internal Instruction Memory (IMEM) -------------------------------------------
     -- -------------------------------------------------------------------------------------------
     neorv32_int_imem_inst : entity neorv32.neorv32_imem
-    generic map(
-        IMEM_BASE => imem_base_c,
-        IMEM_SIZE => MEM_INT_IMEM_SIZE,
-        IMEM_AS_IROM => not true
-    )
-    port map(
-        clk_i => clk_i,
-        bus_req_i => soc_req,
-        bus_rsp_o => rsp_bus(DEV_IMEM)
-    );
+        generic map(
+            IMEM_BASE => imem_base_c,
+            IMEM_SIZE => MEM_INT_IMEM_SIZE,
+            IMEM_AS_IROM => not true
+        )
+        port map(
+            clk_i => clk_i,
+            bus_req_i => soc_req,
+            bus_rsp_o => rsp_bus(DEV_IMEM)
+        );
 
     -- Processor-Internal Data Memory (DMEM) --------------------------------------------------
     -- -------------------------------------------------------------------------------------------
     neorv32_int_dmem_inst : entity neorv32.neorv32_dmem
-    generic map(
-        DMEM_BASE => dmem_base_c,
-        DMEM_SIZE => MEM_INT_DMEM_SIZE
-    )
-    port map(
-        clk_i => clk_i,
-        bus_req_i => soc_req,
-        bus_rsp_o => rsp_bus(DEV_DMEM)
-    );
+        generic map(
+            DMEM_BASE => dmem_base_c,
+            DMEM_SIZE => MEM_INT_DMEM_SIZE
+        )
+        port map(
+            clk_i => clk_i,
+            bus_req_i => soc_req,
+            bus_rsp_o => rsp_bus(DEV_DMEM)
+        );
 
     -- Processor-Internal Bootloader ROM (BOOTROM) --------------------------------------------
     -- -------------------------------------------------------------------------------------------
     neorv32_boot_rom_inst : entity neorv32.neorv32_boot_rom
-    generic map(
-        BOOTROM_BASE => boot_rom_base_c
-    )
-    port map(
-        clk_i => clk_i,
-        bus_req_i => soc_req,
-        bus_rsp_o => rsp_bus(DEV_BOOTROM)
-    );
+        generic map(
+            BOOTROM_BASE => boot_rom_base_c
+        )
+        port map(
+            clk_i => clk_i,
+            bus_req_i => soc_req,
+            bus_rsp_o => rsp_bus(DEV_BOOTROM)
+        );
 
     -- Execute In Place Module (XIP) ----------------------------------------------------------
     -- -------------------------------------------------------------------------------------------
     neorv32_xip_inst : entity neorv32.neorv32_xip
-    port map(
-        -- global control --
-        clk_i => clk_i,
-        rstn_i => rstn_int,
-        bus_req_i => io_req,
-        bus_rsp_o => rsp_bus(DEV_XIP_CT),
-        xip_req_i => soc_req,
-        xip_rsp_o => rsp_bus(DEV_XIP_ACC),
-        xip_en_o => xip_enable,
-        xip_acc_o => xip_access,
-        xip_page_o => xip_page,
-        clkgen_en_o => xip_cg_en,
-        clkgen_i => clk_gen,
-        spi_csn_o => xip_csn_o,
-        spi_clk_o => xip_clk_o,
-        spi_dat_i => xip_dat_i,
-        spi_dat_o => xip_dat_o
-    );
+        port map(
+            -- global control --
+            clk_i => clk_i,
+            rstn_i => rstn_int,
+            bus_req_i => io_req,
+            bus_rsp_o => rsp_bus(DEV_XIP_CT),
+            xip_req_i => soc_req,
+            xip_rsp_o => rsp_bus(DEV_XIP_ACC),
+            xip_en_o => xip_enable,
+            xip_acc_o => xip_access,
+            xip_page_o => xip_page,
+            clkgen_en_o => xip_cg_en,
+            clkgen_i => clk_gen,
+            spi_csn_o => xip_csn_o,
+            spi_clk_o => xip_clk_o,
+            spi_dat_i => xip_dat_i,
+            spi_dat_o => xip_dat_o
+        );
 
     -- ****************************************************************************************************************************
     -- IO/Peripheral Modules
@@ -453,11 +453,12 @@ begin
     end process io_gateway;
 
     -- IO access? --
-    io_acc <= '1' when (soc_req.addr(31) = '1') and (soc_req.addr(13) = '1') else '0';
+    io_acc <= '1' when (soc_req.addr(31) = '1') and (soc_req.addr(13) = '1') else
+              '0';
 
     -- General Purpose Input/Output Port (GPIO) -----------------------------------------------
     -- -------------------------------------------------------------------------------------------
-        neorv32_gpio_inst : entity neorv32.neorv32_gpio
+    neorv32_gpio_inst : entity neorv32.neorv32_gpio
         generic map(
             GPIO_NUM => IO_GPIO_NUM
         )
@@ -473,11 +474,11 @@ begin
 
     -- Watch Dog Timer (WDT) ------------------------------------------------------------------
     -- -------------------------------------------------------------------------------------------
-        rstn_wdt <= '1';
+    rstn_wdt <= '1';
 
     -- Primary Universal Asynchronous Receiver/Transmitter (UART0) ----------------------------
     -- -------------------------------------------------------------------------------------------
-        neorv32_uart0_inst : entity neorv32.neorv32_uart
+    neorv32_uart0_inst : entity neorv32.neorv32_uart
         generic map(
             UART_PRIMARY => true,
             UART_RX_FIFO => 1,
@@ -500,7 +501,7 @@ begin
 
     -- External Interrupt Controller (XIRQ) ---------------------------------------------------
     -- -------------------------------------------------------------------------------------------
-        neorv32_xirq_inst : entity neorv32.neorv32_xirq
+    neorv32_xirq_inst : entity neorv32.neorv32_xirq
         generic map(
             XIRQ_NUM_CH => XIRQ_NUM_CH,
             XIRQ_TRIGGER_TYPE => XIRQ_TRIGGER_TYPE,
@@ -519,56 +520,56 @@ begin
     -- System Configuration Information Memory (SYSINFO) --------------------------------------
     -- -------------------------------------------------------------------------------------------
     neorv32_sysinfo_inst : entity neorv32.neorv32_sysinfo
-    generic map(
-        -- General --
-        CLOCK_FREQUENCY => CLOCK_FREQUENCY,
-        CUSTOM_ID => x"00000000",
-        INT_BOOTLOADER_EN => true,
-        -- Physical memory protection (PMP) --
-        PMP_NUM_REGIONS => 0,
-        -- internal Instruction memory --
-        MEM_INT_IMEM_EN => true,
-        MEM_INT_IMEM_SIZE => MEM_INT_IMEM_SIZE,
-        -- Internal Data memory --
-        MEM_INT_DMEM_EN => true,
-        MEM_INT_DMEM_SIZE => MEM_INT_DMEM_SIZE,
-        -- Instruction cache --
-        ICACHE_EN => false,
-        ICACHE_NUM_BLOCKS => 1,
-        ICACHE_BLOCK_SIZE => 4,
-        ICACHE_ASSOCIATIVITY => 1,
-        -- Data cache --
-        DCACHE_EN => false,
-        DCACHE_NUM_BLOCKS => 1,
-        DCACHE_BLOCK_SIZE => 4,
-        -- External memory interface --
-        MEM_EXT_EN => false,
-        MEM_EXT_BIG_ENDIAN => false,
-        -- On-Chip Debugger --
-        ON_CHIP_DEBUGGER_EN => false,
-        -- Processor peripherals --
-        IO_GPIO_NUM => IO_GPIO_NUM,
-        IO_MTIME_EN => false,
-        IO_UART0_EN => true,
-        IO_UART1_EN => false,
-        IO_SPI_EN => false,
-        IO_SDI_EN => false,
-        IO_TWI_EN => false,
-        IO_PWM_NUM_CH => 0,
-        IO_WDT_EN => false,
-        IO_TRNG_EN => false,
-        IO_CFS_EN => false,
-        IO_NEOLED_EN => false,
-        IO_XIRQ_NUM_CH => XIRQ_NUM_CH,
-        IO_GPTMR_EN => false,
-        IO_XIP_EN => true,
-        IO_ONEWIRE_EN => false,
-        IO_DMA_EN => false
-    )
-    port map(
-        clk_i => clk_i,
-        bus_req_i => io_req,
-        bus_rsp_o => rsp_bus(DEV_SYSINFO)
-    );
+        generic map(
+            -- General --
+            CLOCK_FREQUENCY => CLOCK_FREQUENCY,
+            CUSTOM_ID => x"00000000",
+            INT_BOOTLOADER_EN => true,
+            -- Physical memory protection (PMP) --
+            PMP_NUM_REGIONS => 0,
+            -- internal Instruction memory --
+            MEM_INT_IMEM_EN => true,
+            MEM_INT_IMEM_SIZE => MEM_INT_IMEM_SIZE,
+            -- Internal Data memory --
+            MEM_INT_DMEM_EN => true,
+            MEM_INT_DMEM_SIZE => MEM_INT_DMEM_SIZE,
+            -- Instruction cache --
+            ICACHE_EN => false,
+            ICACHE_NUM_BLOCKS => 1,
+            ICACHE_BLOCK_SIZE => 4,
+            ICACHE_ASSOCIATIVITY => 1,
+            -- Data cache --
+            DCACHE_EN => false,
+            DCACHE_NUM_BLOCKS => 1,
+            DCACHE_BLOCK_SIZE => 4,
+            -- External memory interface --
+            MEM_EXT_EN => false,
+            MEM_EXT_BIG_ENDIAN => false,
+            -- On-Chip Debugger --
+            ON_CHIP_DEBUGGER_EN => false,
+            -- Processor peripherals --
+            IO_GPIO_NUM => IO_GPIO_NUM,
+            IO_MTIME_EN => false,
+            IO_UART0_EN => true,
+            IO_UART1_EN => false,
+            IO_SPI_EN => false,
+            IO_SDI_EN => false,
+            IO_TWI_EN => false,
+            IO_PWM_NUM_CH => 0,
+            IO_WDT_EN => false,
+            IO_TRNG_EN => false,
+            IO_CFS_EN => false,
+            IO_NEOLED_EN => false,
+            IO_XIRQ_NUM_CH => XIRQ_NUM_CH,
+            IO_GPTMR_EN => false,
+            IO_XIP_EN => true,
+            IO_ONEWIRE_EN => false,
+            IO_DMA_EN => false
+        )
+        port map(
+            clk_i => clk_i,
+            bus_req_i => io_req,
+            bus_rsp_o => rsp_bus(DEV_SYSINFO)
+        );
 
 end neorv32_top_rtl;
