@@ -412,6 +412,7 @@ begin
             tx_engine.state(2) <= ctrl.enable;
             case tx_engine.state is
                 when "100" => -- IDLE: wait for new data to send
+                    cur_data := (others => 'U');
                     tx_data <= (others => 'U');
                     -- ------------------------------------------------------------
                     tx_engine.baudcnt <= ctrl.baud;
