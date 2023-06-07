@@ -82,6 +82,15 @@ architecture neorv32_busswitch_rtl of neorv32_busswitch is
     end record;
     signal arbiter : arbiter_t;
 
+    signal cur_addr_i : std_ulogic_vector(31 downto 0);
+    signal cur_addr_o : std_ulogic_vector(16 downto 0);
+    signal is_data : std_ulogic;
+    signal is_boot : std_ulogic;
+    signal is_peri : std_ulogic;
+
+    type space_t is (I, B, D, P);
+    signal space : space_t;
+
 begin
 
     -- Access Arbiter -------------------------------------------------------------------------
@@ -192,6 +201,24 @@ begin
 
     -- Peripheral Bus Switch ------------------------------------------------------------------
     -- -------------------------------------------------------------------------------------------
+    cur_addr_i <= data_req_i.addr when (arbiter.bus_sel = '0') else
+                  inst_req_i.addr;
+
+    is_data <= '1' when cur_addr_i(31) = '1' else
+                 '0';
+    is_boot <= '1' when is_data = '0' and cur_addr_i(15 downto 14) = b"11" else
+               '0';
+    is_peri <= '1' when is_data = '1' and cur_addr_i(30) = '1' else
+               '0';
+
+    cur_addr_o(16) <= is_data;
+    cur_addr_o(15) <= '1' when is_boot = '1' or is_peri = '1' else '0';
+    cur_addr_o(14) <= '1' when is_boot = '1' else '0';
+    cur_addr_o(13 downto 12) <= b"00" when is_peri = '1' else cur_addr_i(13 downto 12);
+    cur_addr_o(11 downto 0) <= cur_addr_i(11 downto 0);
+
+    space <= space_t'val(to_integer(unsigned(cur_addr_o(16 downto 15))));
+
     peri_req_o.addr <= data_req_i.addr when (arbiter.bus_sel = '0') else
                        inst_req_i.addr;
 
