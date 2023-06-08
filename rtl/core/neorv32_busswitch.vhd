@@ -213,9 +213,7 @@ begin
 
     cur_addr_o(16) <= is_data;
     cur_addr_o(15) <= '1' when is_boot = '1' or is_peri = '1' else '0';
-    cur_addr_o(14) <= '1' when is_boot = '1' else '0';
-    cur_addr_o(13 downto 12) <= b"00" when is_peri = '1' else cur_addr_i(13 downto 12);
-    cur_addr_o(11 downto 0) <= cur_addr_i(11 downto 0);
+    cur_addr_o(14 downto 0) <= cur_addr_i(14 downto 0);
 
     space <= space_t'val(to_integer(unsigned(cur_addr_o(16 downto 15))));
 
