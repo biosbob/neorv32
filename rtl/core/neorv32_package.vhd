@@ -1038,6 +1038,9 @@ package neorv32_package is
     function leading_zeros_f(input : std_ulogic_vector) return natural;
     impure function mem32_init_f(init : mem32_t; depth : natural) return mem32_t;
 
+    function to_ILEN(xv : std_ulogic_vector(XLEN - 1 downto 0)) return std_ulogic_vector;
+    function to_XLEN(iv : std_ulogic_vector(ILEN - 1 downto 0)) return std_ulogic_vector;
+
     -- ****************************************************************************************************************************
     -- Entity Definitions
     -- ****************************************************************************************************************************
@@ -1344,6 +1347,17 @@ package body neorv32_package is
         end loop; -- idx_v
         return mem_v;
     end function mem32_init_f;
+
+    function to_ILEN(xv : std_ulogic_vector(XLEN - 1 downto 0)) return std_ulogic_vector is
+    begin
+        return xv(ILEN - 1 downto 0);
+    end function to_ILEN;
+
+    function to_XLEN(iv : std_ulogic_vector(ILEN - 1 downto 0)) return std_ulogic_vector is
+    begin
+        return (31 downto 16 => '0') & iv;
+    end function to_XLEN;
+
 
 end neorv32_package;
 
