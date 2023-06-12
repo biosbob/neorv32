@@ -94,6 +94,7 @@ APP_ELF  = main.elf
 APP_HEX  = neorv32_raw_exe.hex
 APP_BIN  = neorv32_raw_exe.bin
 APP_ASM  = main.asm
+APP_MAP  = main.map
 APP_IMG  = neorv32_application_image.vhd
 BOOT_IMG = neorv32_bootloader_image.vhd
 
@@ -187,7 +188,7 @@ $(IMAGE_GEN): $(NEORV32_EXG_PATH)/image_gen.c
 
 # Link object files and show memory utilization
 $(APP_ELF): $(OBJ)
-	@$(CC) $(CC_OPTS) -T $(LD_SCRIPT) $(OBJ) $(LD_LIBS) -o $@
+	@$(CC) $(CC_OPTS) -T $(LD_SCRIPT) $(OBJ) $(LD_LIBS) -Wl,-Map,$(APP_MAP) -o $@
 	@echo "Memory utilization:"
 	@$(SIZE) $(APP_ELF)
 
@@ -308,7 +309,7 @@ gdb:
 # Clean up
 # -----------------------------------------------------------------------------
 clean:
-	@rm -f *.elf *.o *.bin *.out *.asm *.vhd *.hex .gdb_history
+	@rm -f *.elf *.o *.bin *.out *.asm *.map *.vhd *.hex .gdb_history
 
 clean_all: clean
 	@rm -f $(OBJ) $(IMAGE_GEN)
