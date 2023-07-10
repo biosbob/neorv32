@@ -63,7 +63,7 @@ package neorv32_package is
     constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01080502"; -- hardware version
     constant archid_c : natural := 19; -- official RISC-V architecture ID
     constant XLEN : natural := 32; -- native data path width, do not change!
-    constant ILEN : natural := 16; -- native inst addr width, do not change!
+    constant CLEN : natural := 17; -- compressed address width, do not change!
 
 
     -- Check if we're inside the Matrix -------------------------------------------------------
@@ -333,7 +333,7 @@ package neorv32_package is
     end record;
 
     type inst_req_t is record
-        addr : std_ulogic_vector(ILEN downto 0); -- access address
+        addr : std_ulogic_vector(CLEN - 1 downto 0); -- access address
         data : std_ulogic_vector(31 downto 0); -- write data
         ben : std_ulogic_vector(03 downto 0); -- byte enable
         we : std_ulogic; -- write request (single-shot)
@@ -1047,8 +1047,8 @@ package neorv32_package is
     function leading_zeros_f(input : std_ulogic_vector) return natural;
     impure function mem32_init_f(init : mem32_t; depth : natural) return mem32_t;
 
-    function to_ILEN(xv : std_ulogic_vector(XLEN - 1 downto 0)) return std_ulogic_vector;
-    function to_XLEN(iv : std_ulogic_vector(ILEN downto 0)) return std_ulogic_vector;
+    function to_CLEN(xv : std_ulogic_vector(XLEN - 1 downto 0)) return std_ulogic_vector;
+    function to_XLEN(iv : std_ulogic_vector(CLEN - 1 downto 0)) return std_ulogic_vector;
 
     -- ****************************************************************************************************************************
     -- Entity Definitions
@@ -1357,14 +1357,14 @@ package body neorv32_package is
         return mem_v;
     end function mem32_init_f;
 
-    function to_ILEN(xv : std_ulogic_vector(XLEN - 1 downto 0)) return std_ulogic_vector is
+    function to_CLEN(xv : std_ulogic_vector(XLEN - 1 downto 0)) return std_ulogic_vector is
     begin
-        return xv(ILEN downto 0);
-    end function to_ILEN;
+        return xv(CLEN - 1 downto 0);
+    end function to_CLEN;
 
-    function to_XLEN(iv : std_ulogic_vector(ILEN downto 0)) return std_ulogic_vector is
+    function to_XLEN(iv : std_ulogic_vector(CLEN - 1 downto 0)) return std_ulogic_vector is
     begin
-        return (31 downto ILEN + 1 => '0') & iv;
+        return (31 downto CLEN => '0') & iv;
     end function to_XLEN;
 
 

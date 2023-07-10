@@ -86,7 +86,7 @@ entity neorv32_cpu_control is
         rstn_i : in std_ulogic; -- global reset, low-active, async
         ctrl_o : out ctrl_bus_t; -- main control bus
         -- instruction fetch interface --
-        i_bus_addr_o : out std_ulogic_vector(ILEN downto 0); -- bus access address
+        i_bus_addr_o : out std_ulogic_vector(CLEN - 1 downto 0); -- bus access address
         i_bus_rdata_i : in std_ulogic_vector(31 downto 0); -- bus read data
         i_bus_re_o : out std_ulogic; -- read enable
         i_bus_ack_i : in std_ulogic; -- bus transfer acknowledge
@@ -420,7 +420,7 @@ begin
     end process fetch_engine_fsm;
 
     -- PC output for instruction fetch --
-    i_bus_addr_o <= fetch_engine.pc(ILEN downto 2) & "00"; -- 32-bit aligned
+    i_bus_addr_o <= fetch_engine.pc(CLEN - 1 downto 2) & "00"; -- 32-bit aligned
 
     -- instruction fetch (read) request if IPB not full --
     i_bus_re_o <= '1' when (fetch_engine.state = IF_REQUEST) and (ipb.free = "11") else
