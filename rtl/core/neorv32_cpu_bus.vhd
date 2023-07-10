@@ -47,8 +47,6 @@ entity neorv32_cpu_bus is
         clk_i : in std_ulogic; -- global clock, rising edge
         rstn_i : in std_ulogic := '0'; -- global reset, low-active, async
         ctrl_i : in ctrl_bus_t; -- main control bus
-        -- cpu instruction fetch interface --
-        fetch_pc_i : in std_ulogic_vector(XLEN - 1 downto 0); -- PC for instruction fetch
         -- cpu data access interface --
         addr_i : in std_ulogic_vector(XLEN - 1 downto 0); -- ALU result -> access address
         wdata_i : in std_ulogic_vector(XLEN - 1 downto 0); -- write data

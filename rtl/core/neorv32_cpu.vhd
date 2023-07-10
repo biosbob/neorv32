@@ -347,8 +347,6 @@ begin
             clk_i => clk_i, -- global clock, rising edge
             rstn_i => rstn_i, -- global reset, low-active, async
             ctrl_i => ctrl, -- main control bus
-            -- cpu instruction fetch interface --
-            fetch_pc_i => fetch_pc, -- PC for instruction fetch
             -- cpu data access interface --
             addr_i => alu_add, -- ALU.add result -> access address
             wdata_i => rs2, -- write data
