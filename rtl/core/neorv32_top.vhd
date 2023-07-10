@@ -134,7 +134,8 @@ architecture neorv32_top_rtl of neorv32_top is
         DEV_SYSINFO, DEV_XIRQ, DEV_XIP_CT, DEV_XIP_ACC);
 
     -- core complex --
-    signal cpu_i_req, cpu_d_req : bus_req_t; -- CPU core
+    signal cpu_i_req : inst_req_t;
+    signal cpu_d_req : bus_req_t; -- CPU core
     signal cpu_i_rsp, cpu_d_rsp : bus_rsp_t; -- CPU core
     signal core_req : bus_req_t; -- core complex (CPU + caches)
     signal core_rsp : bus_rsp_t; -- core complex (CPU + caches)

@@ -48,7 +48,7 @@ entity neorv32_busswitch is
         rstn_i : in std_ulogic; -- global reset, low-active, async
         data_req_i : in bus_req_t; -- host data port: request bus
         data_rsp_o : out bus_rsp_t; -- host data port: response bus
-        inst_req_i : in bus_req_t; -- host inst port: request bus
+        inst_req_i : in inst_req_t; -- host inst port: request bus
         inst_rsp_o : out bus_rsp_t; -- host inst port: response bus
         peri_req_o : out bus_req_t; -- device port request bus
         peri_rsp_i : in bus_rsp_t -- device port response bus
@@ -202,7 +202,7 @@ begin
     -- Peripheral Bus Switch ------------------------------------------------------------------
     -- -------------------------------------------------------------------------------------------
     cur_addr_i <= data_req_i.addr when (arbiter.bus_sel = '0') else
-                  inst_req_i.addr;
+                  to_XLEN(inst_req_i.addr);
 
     is_data <= '1' when cur_addr_i(31) = '1' else
                  '0';
@@ -218,7 +218,7 @@ begin
     space <= space_t'val(to_integer(unsigned(cur_addr_o(16 downto 15))));
 
     peri_req_o.addr <= data_req_i.addr when (arbiter.bus_sel = '0') else
-                       inst_req_i.addr;
+                       to_XLEN(inst_req_i.addr);
 
     peri_req_o.data <= inst_req_i.data when (PORT_DATA_READ_ONLY = true) else
                        data_req_i.data when (PORT_INST_READ_ONLY = true) else

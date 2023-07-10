@@ -332,6 +332,15 @@ package neorv32_package is
         src : std_ulogic; -- access source (1=instruction fetch, 0=data access)
     end record;
 
+    type inst_req_t is record
+        addr : std_ulogic_vector(ILEN downto 0); -- access address
+        data : std_ulogic_vector(31 downto 0); -- write data
+        ben : std_ulogic_vector(03 downto 0); -- byte enable
+        we : std_ulogic; -- write request (single-shot)
+        re : std_ulogic; -- read request (single-shot)
+        src : std_ulogic; -- access source (1=instruction fetch, 0=data access)
+    end record;
+
     type cas_req_t is record
         addr : std_ulogic_vector(16 downto 0); -- access address
         data : std_ulogic_vector(31 downto 0); -- write data
@@ -1039,7 +1048,7 @@ package neorv32_package is
     impure function mem32_init_f(init : mem32_t; depth : natural) return mem32_t;
 
     function to_ILEN(xv : std_ulogic_vector(XLEN - 1 downto 0)) return std_ulogic_vector;
-    function to_XLEN(iv : std_ulogic_vector(ILEN - 1 downto 0)) return std_ulogic_vector;
+    function to_XLEN(iv : std_ulogic_vector(ILEN downto 0)) return std_ulogic_vector;
 
     -- ****************************************************************************************************************************
     -- Entity Definitions
@@ -1350,12 +1359,12 @@ package body neorv32_package is
 
     function to_ILEN(xv : std_ulogic_vector(XLEN - 1 downto 0)) return std_ulogic_vector is
     begin
-        return xv(ILEN - 1 downto 0);
+        return xv(ILEN downto 0);
     end function to_ILEN;
 
-    function to_XLEN(iv : std_ulogic_vector(ILEN - 1 downto 0)) return std_ulogic_vector is
+    function to_XLEN(iv : std_ulogic_vector(ILEN downto 0)) return std_ulogic_vector is
     begin
-        return (31 downto 16 => '0') & iv;
+        return (31 downto ILEN + 1 => '0') & iv;
     end function to_XLEN;
 
 

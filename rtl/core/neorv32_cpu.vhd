@@ -83,7 +83,7 @@ entity neorv32_cpu is
         firq_i : in std_ulogic_vector(15 downto 0); -- custom fast interrupts
         dbi_i : in std_ulogic; -- risc-v debug halt request interrupt
         -- instruction bus interface --
-        ibus_req_o : out bus_req_t; -- request bus
+        ibus_req_o : out inst_req_t; -- request bus
         ibus_rsp_i : in bus_rsp_t; -- response bus
         -- data bus interface --
         dbus_req_o : out bus_req_t; -- request bus
@@ -121,7 +121,7 @@ architecture neorv32_cpu_rtl of neorv32_cpu is
     signal ma_store : std_ulogic; -- misaligned store data address
     signal be_load : std_ulogic; -- bus error on load data access
     signal be_store : std_ulogic; -- bus error on store data access
-    signal fetch_pc : std_ulogic_vector(XLEN - 1 downto 0); -- pc for instruction fetch
+    signal fetch_pc : std_ulogic_vector(ILEN downto 0); -- pc for instruction fetch
     signal curr_pc : std_ulogic_vector(XLEN - 1 downto 0); -- current pc (for currently executed instruction)
     signal next_pc : std_ulogic_vector(XLEN - 1 downto 0); -- next pc (for next executed instruction)
     signal fpu_flags : std_ulogic_vector(4 downto 0); -- FPU exception flags
