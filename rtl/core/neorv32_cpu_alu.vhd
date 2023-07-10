@@ -64,7 +64,7 @@ entity neorv32_cpu_alu is
     rs2_i       : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 2
     rs3_i       : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 3
     rs4_i       : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 4
-    pc_i        : in  std_ulogic_vector(XLEN-1 downto 0); -- current PC
+    pc_i        : in  std_ulogic_vector(CLEN-1 downto 0); -- current PC
     imm_i       : in  std_ulogic_vector(XLEN-1 downto 0); -- immediate
     -- data output --
     cmp_o       : out std_ulogic_vector(1 downto 0); -- comparator status
@@ -121,7 +121,7 @@ begin
 
   -- ALU Input Operand Select ---------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  opa <= pc_i  when (ctrl_i.alu_opa_mux = '1') else rs1_i;
+  opa <= to_XLEN(pc_i)  when (ctrl_i.alu_opa_mux = '1') else rs1_i;
   opb <= imm_i when (ctrl_i.alu_opb_mux = '1') else rs2_i;
 
   opa_x <= (opa(opa'left) and (not ctrl_i.alu_unsigned)) & opa; -- sign-extend

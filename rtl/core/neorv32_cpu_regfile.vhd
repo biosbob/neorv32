@@ -65,7 +65,7 @@ entity neorv32_cpu_regfile is
     alu_i  : in  std_ulogic_vector(XLEN-1 downto 0); -- ALU result
     mem_i  : in  std_ulogic_vector(XLEN-1 downto 0); -- memory read data
     csr_i  : in  std_ulogic_vector(XLEN-1 downto 0); -- CSR read data
-    pc2_i  : in  std_ulogic_vector(XLEN-1 downto 0); -- next PC
+    pc2_i  : in  std_ulogic_vector(CLEN-1 downto 0); -- next PC
     -- data output --
     rs1_o  : out std_ulogic_vector(XLEN-1 downto 0); -- operand 1
     rs2_o  : out std_ulogic_vector(XLEN-1 downto 0); -- operand 2
@@ -101,7 +101,7 @@ begin
       when rf_mux_alu_c => rf_wdata <= alu_i; -- ALU result
       when rf_mux_mem_c => rf_wdata <= mem_i; -- memory read data
       when rf_mux_csr_c => rf_wdata <= csr_i; -- CSR read data
-      when rf_mux_npc_c => rf_wdata <= pc2_i; -- next PC (branch return/link address)
+      when rf_mux_npc_c => rf_wdata <= to_XLEN(pc2_i); -- next PC (branch return/link address)
       when others       => rf_wdata <= alu_i; -- don't care
     end case;
   end process wb_select;

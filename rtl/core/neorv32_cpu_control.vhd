@@ -101,8 +101,8 @@ entity neorv32_cpu_control is
         rs1_i : in std_ulogic_vector(XLEN - 1 downto 0); -- rf source 1
         -- data output --
         imm_o : out std_ulogic_vector(XLEN - 1 downto 0); -- immediate
-        curr_pc_o : out std_ulogic_vector(XLEN - 1 downto 0); -- current PC (corresponding to current instruction)
-        next_pc_o : out std_ulogic_vector(XLEN - 1 downto 0); -- next PC (corresponding to next instruction)
+        curr_pc_o : out std_ulogic_vector(CLEN - 1 downto 0); -- current PC (corresponding to current instruction)
+        next_pc_o : out std_ulogic_vector(CLEN - 1 downto 0); -- next PC (corresponding to next instruction)
         csr_rdata_o : out std_ulogic_vector(XLEN - 1 downto 0); -- CSR read data
         -- FPU interface --
         fpu_flags_i : in std_ulogic_vector(4 downto 0); -- exception flags
@@ -136,7 +136,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
         state_prev : fetch_engine_state_t;
         restart : std_ulogic;
         unaligned : std_ulogic;
-        pc : std_ulogic_vector(XLEN - 1 downto 0);
+        pc : std_ulogic_vector(CLEN - 1 downto 0);
         reset : std_ulogic;
         resp : std_ulogic; -- bus response
         a_err : std_ulogic; -- alignment error
@@ -195,10 +195,10 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
         is_ci : std_ulogic; -- current instruction is de-compressed instruction
         is_ci_nxt : std_ulogic;
         branch_taken : std_ulogic; -- branch condition fulfilled
-        pc : std_ulogic_vector(XLEN - 1 downto 0); -- actual PC, corresponding to current executed instruction
+        pc : std_ulogic_vector(CLEN - 1 downto 0); -- actual PC, corresponding to current executed instruction
         pc_mux_sel : std_ulogic; -- source select for PC update
         pc_we : std_ulogic; -- PC update enabled
-        next_pc : std_ulogic_vector(XLEN - 1 downto 0); -- next PC, corresponding to next instruction to be executed
+        next_pc : std_ulogic_vector(CLEN - 1 downto 0); -- next PC, corresponding to next instruction to be executed
         next_pc_inc : std_ulogic_vector(XLEN - 1 downto 0); -- increment to get next PC
         branched : std_ulogic; -- instruction fetch was reset
         branched_nxt : std_ulogic;
@@ -213,7 +213,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
         irq_buf : std_ulogic_vector(irq_width_c - 1 downto 0); -- asynchronous exception/interrupt buffer (one bit per interrupt source)
         irq_fire : std_ulogic; -- set if an interrupt is actually kicking in
         cause : std_ulogic_vector(6 downto 0); -- trap ID for mcause CSR & debug-mode entry identifier
-        epc : std_ulogic_vector(XLEN - 1 downto 0); -- exception program counter
+        epc : std_ulogic_vector(CLEN - 1 downto 0); -- exception program counter
         --
         env_start : std_ulogic; -- start trap handler env
         env_ack : std_ulogic; -- start of trap handler acknowledged
@@ -256,7 +256,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
         privilege : std_ulogic; -- current privilege mode
         privilege_eff : std_ulogic; -- current *effective* privilege mode
         --
-        mepc : std_ulogic_vector(XLEN - 1 downto 0); -- machine exception PC
+        mepc : std_ulogic_vector(CLEN - 1 downto 0); -- machine exception PC
         mcause : std_ulogic_vector(5 downto 0); -- machine trap cause
         mtvec : std_ulogic_vector(XLEN - 1 downto 0); -- machine trap-handler base address
         mtval : std_ulogic_vector(XLEN - 1 downto 0); -- machine bad address or instruction
@@ -375,7 +375,7 @@ begin
 
                 when IF_RESTART => -- set new fetch start address
                     -- ------------------------------------------------------------
-                    fetch_engine.pc <= execute_engine.pc(XLEN - 1 downto 2) & "00"; -- initialize with "real" PC, 32-bit aligned
+                    fetch_engine.pc <= execute_engine.pc(CLEN - 1 downto 2) & "00"; -- initialize with "real" PC, 32-bit aligned
                     fetch_engine.unaligned <= execute_engine.pc(1);
                     fetch_engine.state <= IF_REQUEST;
 
@@ -628,7 +628,7 @@ begin
             execute_engine.branched <= '0';
             execute_engine.ir <= (others => '0');
             execute_engine.is_ci <= '0';
-            execute_engine.pc <= CPU_BOOT_ADDR(XLEN - 1 downto 2) & "00"; -- 32-bit aligned boot address
+            execute_engine.pc <= CPU_BOOT_ADDR(CLEN - 1 downto 2) & "00"; -- 32-bit aligned boot address
             execute_engine.next_pc <= (others => '0');
         elsif rising_edge(clk_i) then
             -- control bus --
@@ -645,9 +645,9 @@ begin
             -- PC update --
             if (execute_engine.pc_we = '1') then
                 if (execute_engine.pc_mux_sel = '0') then
-                    execute_engine.pc <= execute_engine.next_pc(XLEN - 1 downto 1) & '0'; -- next instruction address
+                    execute_engine.pc <= execute_engine.next_pc(CLEN - 1 downto 1) & '0'; -- next instruction address
                 else
-                    execute_engine.pc <= alu_add_i(XLEN - 1 downto 1) & '0'; -- jump/taken-branch
+                    execute_engine.pc <= to_CLEN(alu_add_i(XLEN - 1 downto 1) & '0'); -- jump/taken-branch
                 end if;
             end if;
 
@@ -655,22 +655,22 @@ begin
             case execute_engine.state is
                 when TRAP_ENTER => -- starting trap environment
                     if (trap_ctrl.cause(5) = '1') and (CPU_EXTENSION_RISCV_Sdext = true) then -- trap cause: debug mode (re-)entry
-                        execute_engine.next_pc <= CPU_DEBUG_PARK_ADDR; -- debug mode enter; start at "parking loop" <normal_entry>
+                        execute_engine.next_pc <= to_CLEN(CPU_DEBUG_PARK_ADDR); -- debug mode enter; start at "parking loop" <normal_entry>
                     elsif (debug_ctrl.running = '1') and (CPU_EXTENSION_RISCV_Sdext = true) then -- any other exception INSIDE debug mode
-                        execute_engine.next_pc <= CPU_DEBUG_EXC_ADDR; -- debug mode enter: start at "parking loop" <exception_entry>
+                        execute_engine.next_pc <= to_CLEN(CPU_DEBUG_EXC_ADDR); -- debug mode enter: start at "parking loop" <exception_entry>
                     else -- normal start of trap
-                        execute_engine.next_pc <= csr.mtvec(XLEN - 1 downto 2) & "00"; -- trap enter
+                        execute_engine.next_pc <= csr.mtvec(CLEN - 1 downto 2) & "00"; -- trap enter
                     end if;
                 when TRAP_EXIT => -- leaving trap environment
                     if (debug_ctrl.running = '1') and (CPU_EXTENSION_RISCV_Sdext = true) then -- debug mode exit
-                        execute_engine.next_pc <= csr.dpc(XLEN - 1 downto 1) & '0'; -- debug mode exit
+                        execute_engine.next_pc <= csr.dpc(CLEN - 1 downto 1) & '0'; -- debug mode exit
                     else -- normal end of trap
-                        execute_engine.next_pc <= csr.mepc(XLEN - 1 downto 1) & '0'; -- trap exit
+                        execute_engine.next_pc <= csr.mepc(CLEN - 1 downto 1) & '0'; -- trap exit
                     end if;
                 when EXECUTE => -- normal increment
-                    execute_engine.next_pc <= std_ulogic_vector(unsigned(execute_engine.pc) + unsigned(execute_engine.next_pc_inc)); -- next linear PC
+                    execute_engine.next_pc <= to_CLEN(std_ulogic_vector(unsigned(execute_engine.pc) + unsigned(execute_engine.next_pc_inc))); -- next linear PC
                 when BRANCHED => -- control flow transfer
-                    execute_engine.next_pc <= execute_engine.pc(XLEN - 1 downto 1) & '0'; -- get updated PC
+                    execute_engine.next_pc <= execute_engine.pc(CLEN - 1 downto 1) & '0'; -- get updated PC
                 when others =>
                     null;
             end case;
@@ -683,8 +683,8 @@ begin
                                               x"2";
 
     -- PC output --
-    curr_pc_o <= execute_engine.pc(XLEN - 1 downto 1) & '0'; -- current PC
-    next_pc_o <= execute_engine.next_pc(XLEN - 1 downto 1) & '0'; -- next PC
+    curr_pc_o <= execute_engine.pc(CLEN - 1 downto 1) & '0'; -- current PC
+    next_pc_o <= execute_engine.next_pc(CLEN - 1 downto 1) & '0'; -- next PC
 
     -- Decoding Helper Logic ------------------------------------------------------------------
     -- -------------------------------------------------------------------------------------------
@@ -1698,7 +1698,7 @@ begin
                         csr.mscratch <= csr.wdata;
 
                     when csr_mepc_c => -- machine exception program counter
-                        csr.mepc <= csr.wdata;
+                        csr.mepc <= to_CLEN(csr.wdata);
 
                     when csr_mcause_c => -- machine trap cause
                         csr.mcause <= csr.wdata(31) & csr.wdata(4 downto 0); -- type (exception/interrupt) & identifier
@@ -1782,7 +1782,7 @@ begin
                         -- trap cause --
                         csr.mcause <= trap_ctrl.cause(trap_ctrl.cause'left) & trap_ctrl.cause(4 downto 0); -- type & identifier
                         -- trap PC --
-                        csr.mepc <= trap_ctrl.epc(XLEN - 1 downto 1) & '0';
+                        csr.mepc <= trap_ctrl.epc(CLEN - 1 downto 1) & '0';
                         -- trap value --
                         case trap_ctrl.cause is
                             when trap_lma_c | trap_laf_c | trap_sma_c | trap_saf_c => -- misaligned load/store address or load/store access error
@@ -1790,7 +1790,7 @@ begin
                             when trap_iil_c => -- illegal instruction
                                 csr.mtval <= execute_engine.ir; -- faulting instruction word
                             when trap_brk_c => -- breakpoint instruction
-                                csr.mtval <= trap_ctrl.epc(XLEN - 1 downto 1) & '0'; -- address of breakpoint instruction [NOTE] redundant - might be removed again
+                                csr.mtval <= to_XLEN(trap_ctrl.epc(CLEN - 1 downto 1) & '0'); -- address of breakpoint instruction [NOTE] redundant - might be removed again
                             when others => -- everything else including all interrupts
                                 csr.mtval <= (others => '0');
                         end case;
@@ -1809,7 +1809,7 @@ begin
                         -- current privilege mode when debug mode was entered --
                         csr.dcsr_prv <= csr.privilege;
                         -- trap PC --
-                        csr.dpc <= trap_ctrl.epc(XLEN - 1 downto 1) & '0';
+                        csr.dpc <= trap_ctrl.epc(CLEN - 1 downto 1) & '0';
                     end if;
 
                     -- --------------------------------------------------------------------
@@ -2025,7 +2025,7 @@ begin
                     csr.rdata <= csr.mscratch;
 
                 when csr_mepc_c => -- machine exception program counter
-                    csr.rdata <= csr.mepc(XLEN - 1 downto 1) & '0';
+                    csr.rdata <= to_XLEN(csr.mepc(CLEN - 1 downto 1) & '0');
 
                 when csr_mcause_c => -- machine trap cause
                     csr.rdata(31) <= csr.mcause(5);
@@ -2619,7 +2619,7 @@ csr.dcsr_rd(01 downto 00) <= (others => csr.dcsr_prv); -- prv: privilege mode wh
 
 -- trigger to enter debug-mode: instruction address match (fire AFTER execution) --
 hw_trigger_fire <= '1' when (CPU_EXTENSION_RISCV_Sdtrig = true) and (csr.tdata1_exe = '1') and
-                   (csr.tdata2(XLEN - 1 downto 1) = execute_engine.pc(XLEN - 1 downto 1)) and
+                   (csr.tdata2(CLEN - 1 downto 1) = execute_engine.pc(CLEN - 1 downto 1)) and
                    (execute_engine.state = EXECUTE) else
                    '0';
 
