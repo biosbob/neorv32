@@ -204,16 +204,7 @@ begin
     cur_addr_i <= data_req_i.addr when (arbiter.bus_sel = '0') else
                   to_XLEN(inst_req_i.addr);
 
-    is_data <= '1' when cur_addr_i(31) = '1' else
-                 '0';
-    is_boot <= '1' when is_data = '0' and cur_addr_i(15 downto 14) = b"11" else
-               '0';
-    is_peri <= '1' when is_data = '1' and cur_addr_i(30) = '1' else
-               '0';
-
-    cur_addr_o(16) <= is_data;
-    cur_addr_o(15) <= '1' when is_boot = '1' or is_peri = '1' else '0';
-    cur_addr_o(14 downto 0) <= cur_addr_i(14 downto 0);
+    cur_addr_o <= cur_addr_i(16 downto 0);
 
     space <= space_t'val(to_integer(unsigned(cur_addr_o(16 downto 15))));
 
