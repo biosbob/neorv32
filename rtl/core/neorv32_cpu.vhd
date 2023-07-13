@@ -103,20 +103,20 @@ architecture neorv32_cpu_rtl of neorv32_cpu is
 
     -- local signals --
     signal ctrl : ctrl_bus_t; -- main control bus
-    signal imm : std_ulogic_vector(XLEN - 1 downto 0); -- immediate
-    signal rs1 : std_ulogic_vector(XLEN - 1 downto 0); -- source register 1
-    signal rs2 : std_ulogic_vector(XLEN - 1 downto 0); -- source register 2
-    signal rs3 : std_ulogic_vector(XLEN - 1 downto 0); -- source register 3
-    signal rs4 : std_ulogic_vector(XLEN - 1 downto 0); -- source register 4
-    signal alu_res : std_ulogic_vector(XLEN - 1 downto 0); -- alu result
-    signal alu_add : std_ulogic_vector(XLEN - 1 downto 0); -- alu address result
+    signal imm : data_t; -- immediate
+    signal rs1 : data_t; -- source register 1
+    signal rs2 : data_t; -- source register 2
+    signal rs3 : data_t; -- source register 3
+    signal rs4 : data_t; -- source register 4
+    signal alu_res : data_t; -- alu result
+    signal alu_add : caddr_t; -- alu address result
     signal alu_cmp : std_ulogic_vector(1 downto 0); -- comparator result
-    signal mem_rdata : std_ulogic_vector(XLEN - 1 downto 0); -- memory read data
+    signal mem_rdata : data_t; -- memory read data
     signal cp_done : std_ulogic; -- ALU co-processor operation done
     signal alu_exc : std_ulogic; -- ALU exception
     signal bus_d_wait : std_ulogic; -- wait for current bus data access
-    signal csr_rdata : std_ulogic_vector(XLEN - 1 downto 0); -- csr read data
-    signal mar : std_ulogic_vector(XLEN - 1 downto 0); -- memory address register
+    signal csr_rdata : data_t; -- csr read data
+    signal mar : caddr_t; -- memory address register
     signal ma_load : std_ulogic; -- misaligned load data address
     signal ma_store : std_ulogic; -- misaligned store data address
     signal be_load : std_ulogic; -- bus error on load data access

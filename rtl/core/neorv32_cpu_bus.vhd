@@ -48,19 +48,19 @@ entity neorv32_cpu_bus is
         rstn_i : in std_ulogic := '0'; -- global reset, low-active, async
         ctrl_i : in ctrl_bus_t; -- main control bus
         -- cpu data access interface --
-        addr_i : in std_ulogic_vector(XLEN - 1 downto 0); -- ALU result -> access address
-        wdata_i : in std_ulogic_vector(XLEN - 1 downto 0); -- write data
-        rdata_o : out std_ulogic_vector(XLEN - 1 downto 0); -- read data
-        mar_o : out std_ulogic_vector(XLEN - 1 downto 0); -- current memory address register
+        addr_i : in caddr_t; -- ALU result -> access address
+        wdata_i : in data_t; -- write data
+        rdata_o : out data_t; -- read data
+        mar_o : out caddr_t; -- current memory address register
         d_wait_o : out std_ulogic; -- wait for access to complete
         ma_load_o : out std_ulogic; -- misaligned load data address
         ma_store_o : out std_ulogic; -- misaligned store data address
         be_load_o : out std_ulogic; -- bus error on load data access
         be_store_o : out std_ulogic; -- bus error on store data access
         -- data bus --
-        d_bus_addr_o : out std_ulogic_vector(XLEN - 1 downto 0); -- bus access address
-        d_bus_rdata_i : in std_ulogic_vector(XLEN - 1 downto 0); -- bus read data
-        d_bus_wdata_o : out std_ulogic_vector(XLEN - 1 downto 0); -- bus write data
+        d_bus_addr_o : out caddr_t; -- bus access address
+        d_bus_rdata_i : in data_t; -- bus read data
+        d_bus_wdata_o : out data_t; -- bus write data
         d_bus_ben_o : out std_ulogic_vector((XLEN/8) - 1 downto 0); -- byte enable
         d_bus_we_o : out std_ulogic; -- write enable
         d_bus_re_o : out std_ulogic; -- read enable
@@ -72,7 +72,7 @@ end neorv32_cpu_bus;
 architecture neorv32_cpu_bus_rtl of neorv32_cpu_bus is
 
     -- misc --
-    signal mar : std_ulogic_vector(XLEN - 1 downto 0); -- data memory address register
+    signal mar : caddr_t; -- data memory address register
     signal misaligned : std_ulogic; -- misaligned address
 
     -- bus arbiter --

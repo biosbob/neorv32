@@ -322,6 +322,7 @@ package neorv32_package is
 
     type space_t is (I_SPACE, B_SPACE, D_SPACE, P_SPACE);
     subtype caddr_t is std_ulogic_vector(XLEN - 1 downto 0);
+    subtype data_t is std_ulogic_vector(31 downto 0);
     subtype iaddr_t is std_ulogic_vector(CLEN - 1 downto 0);
 
 
