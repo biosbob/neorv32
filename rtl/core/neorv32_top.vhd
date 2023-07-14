@@ -131,7 +131,7 @@ architecture neorv32_top_rtl of neorv32_top is
 
     -- internal bus system --
     type device_ids_t is (DEV_BUSKEEPER, DEV_IMEM, DEV_DMEM, DEV_BOOTROM, DEV_GPIO, DEV_UART0,
-        DEV_SYSINFO, DEV_XIRQ, DEV_XIP_CT, DEV_XIP_ACC, DEV_SPI);
+        DEV_SYSINFO, DEV_XIRQ, DEV_SPI);
 
     -- core complex --
     signal cpu_i_req : inst_req_t;
@@ -172,9 +172,6 @@ architecture neorv32_top_rtl of neorv32_top is
     constant ext_timeout : std_ulogic := '0';
     constant ext_access : std_ulogic := '0';
     signal spi_csn : std_ulogic_vector(7 downto 0);
-    signal xip_access : std_ulogic;
-    signal xip_enable : std_ulogic;
-    signal xip_page : std_ulogic_vector(3 downto 0);
 
 begin
 
@@ -354,7 +351,7 @@ begin
             bus_err_o => bus_error,
             bus_tmo_i => ext_timeout,
             bus_ext_i => ext_access,
-            bus_xip_i => xip_access
+            bus_xip_i => '0'
         );
 
     -- global bus response ---
