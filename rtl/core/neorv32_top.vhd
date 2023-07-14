@@ -103,13 +103,13 @@ architecture neorv32_top_rtl of neorv32_top is
     constant wdt_cg_en : std_ulogic := '0';
     signal uart0_cg_en : std_ulogic;
     constant uart1_cg_en : std_ulogic := '0';
-    constant spi_cg_en : std_ulogic := '0';
+    signal spi_cg_en : std_ulogic;
     constant twi_cg_en : std_ulogic := '0';
     constant pwm_cg_en : std_ulogic := '0';
     constant cfs_cg_en : std_ulogic := '0';
     constant neoled_cg_en : std_ulogic := '0';
     constant gptmr_cg_en : std_ulogic := '0';
-    signal xip_cg_en : std_ulogic;
+    constant xip_cg_en : std_ulogic := '0';
     constant onewire_cg_en : std_ulogic := '0';
 
     -- CPU status --
@@ -131,7 +131,7 @@ architecture neorv32_top_rtl of neorv32_top is
 
     -- internal bus system --
     type device_ids_t is (DEV_BUSKEEPER, DEV_IMEM, DEV_DMEM, DEV_BOOTROM, DEV_GPIO, DEV_UART0,
-        DEV_SYSINFO, DEV_XIRQ, DEV_XIP_CT, DEV_XIP_ACC);
+        DEV_SYSINFO, DEV_XIRQ, DEV_XIP_CT, DEV_XIP_ACC, DEV_SPI);
 
     -- core complex --
     signal cpu_i_req : inst_req_t;
@@ -156,7 +156,7 @@ architecture neorv32_top_rtl of neorv32_top is
     signal uart0_tx_irq : std_ulogic;
     constant uart1_rx_irq : std_ulogic := '0';
     constant uart1_tx_irq : std_ulogic := '0';
-    constant spi_irq : std_ulogic := '0';
+    signal spi_irq : std_ulogic;
     constant sdi_irq : std_ulogic := '0';
     constant twi_irq : std_ulogic := '0';
     constant cfs_irq : std_ulogic := '0';
@@ -171,6 +171,7 @@ architecture neorv32_top_rtl of neorv32_top is
     signal io_acc : std_ulogic;
     constant ext_timeout : std_ulogic := '0';
     constant ext_access : std_ulogic := '0';
+    signal spi_csn : std_ulogic_vector(7 downto 0);
     signal xip_access : std_ulogic;
     signal xip_enable : std_ulogic;
     signal xip_page : std_ulogic_vector(3 downto 0);
@@ -418,27 +419,25 @@ begin
             bus_rsp_o => rsp_bus(DEV_BOOTROM)
         );
 
-    -- Execute In Place Module (XIP) ----------------------------------------------------------
-    -- -------------------------------------------------------------------------------------------
-    neorv32_xip_inst : entity neorv32.neorv32_xip
-        port map(
-            -- global control --
-            clk_i => clk_i,
-            rstn_i => rstn_int,
-            bus_req_i => io_req,
-            bus_rsp_o => rsp_bus(DEV_XIP_CT),
-            xip_req_i => soc_req,
-            xip_rsp_o => rsp_bus(DEV_XIP_ACC),
-            xip_en_o => xip_enable,
-            xip_acc_o => xip_access,
-            xip_page_o => xip_page,
-            clkgen_en_o => xip_cg_en,
-            clkgen_i => clk_gen,
-            spi_csn_o => xip_csn_o,
-            spi_clk_o => xip_clk_o,
-            spi_dat_i => xip_dat_i,
-            spi_dat_o => xip_dat_o
-        );
+    neorv32_spi_inst: entity neorv32.neorv32_spi
+        generic map (
+            IO_SPI_FIFO => 1
+        )
+        port map (
+            clk_i       => clk_i,
+            rstn_i      => rstn_int,
+            bus_req_i   => io_req,
+            bus_rsp_o   => rsp_bus(DEV_SPI),
+            clkgen_en_o => spi_cg_en,
+            clkgen_i    => clk_gen,
+            spi_clk_o   => xip_clk_o,
+            spi_dat_o   => xip_dat_o,
+            spi_dat_i   => xip_dat_i,
+            spi_csn_o   => spi_csn,
+            irq_o       => spi_irq
+    );
+
+    xip_csn_o <= spi_csn(0);
 
     -- ****************************************************************************************************************************
     -- IO/Peripheral Modules
