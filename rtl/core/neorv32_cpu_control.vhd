@@ -97,13 +97,13 @@ entity neorv32_cpu_control is
         bus_d_wait_i : in std_ulogic; -- wait for bus
         -- data input --
         cmp_i : in std_ulogic_vector(1 downto 0); -- comparator status
-        alu_add_i : in std_ulogic_vector(XLEN - 1 downto 0); -- ALU address result
-        rs1_i : in std_ulogic_vector(XLEN - 1 downto 0); -- rf source 1
+        alu_add_i : in caddr_t; -- ALU address result
+        rs1_i : in data_t; -- rf source 1
         -- data output --
-        imm_o : out std_ulogic_vector(XLEN - 1 downto 0); -- immediate
+        imm_o : out data_t; -- immediate
         curr_pc_o : out iaddr_t; -- current PC (corresponding to current instruction)
         next_pc_o : out iaddr_t; -- next PC (corresponding to next instruction)
-        csr_rdata_o : out std_ulogic_vector(XLEN - 1 downto 0); -- CSR read data
+        csr_rdata_o : out data_t; -- CSR read data
         -- FPU interface --
         fpu_flags_i : in std_ulogic_vector(4 downto 0); -- exception flags
         -- debug mode (halt) request --
@@ -115,7 +115,7 @@ entity neorv32_cpu_control is
         -- fast interrupts (custom) --
         firq_i : in std_ulogic_vector(15 downto 0);
         -- bus access exceptions --
-        mar_i : in std_ulogic_vector(XLEN - 1 downto 0); -- memory address register
+        mar_i : in caddr_t; -- memory address register
         ma_load_i : in std_ulogic; -- misaligned load data address
         ma_store_i : in std_ulogic; -- misaligned store data address
         be_load_i : in std_ulogic; -- bus error on load data access
@@ -199,7 +199,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
         pc_mux_sel : std_ulogic; -- source select for PC update
         pc_we : std_ulogic; -- PC update enabled
         next_pc : iaddr_t; -- next PC, corresponding to next instruction to be executed
-        next_pc_inc : std_ulogic_vector(XLEN - 1 downto 0); -- increment to get next PC
+        next_pc_inc : caddr_t; -- increment to get next PC
         branched : std_ulogic; -- instruction fetch was reset
         branched_nxt : std_ulogic;
     end record;
@@ -238,8 +238,8 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
         we_nxt : std_ulogic;
         re : std_ulogic; -- csr read enable
         re_nxt : std_ulogic;
-        wdata : std_ulogic_vector(XLEN - 1 downto 0); -- csr write data
-        rdata : std_ulogic_vector(XLEN - 1 downto 0); -- csr read data
+        wdata : data_t; -- csr write data
+        rdata : data_t; -- csr read data
         --
         mstatus_mie : std_ulogic; -- global IRQ enable
         mstatus_mpie : std_ulogic; -- previous global IRQ enable
@@ -258,11 +258,11 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
         --
         mepc : iaddr_t; -- machine exception PC
         mcause : std_ulogic_vector(5 downto 0); -- machine trap cause
-        mtvec : std_ulogic_vector(XLEN - 1 downto 0); -- machine trap-handler base address
-        mtval : std_ulogic_vector(XLEN - 1 downto 0); -- machine bad address or instruction
-        mscratch : std_ulogic_vector(XLEN - 1 downto 0); -- machine scratch register
-        mcounteren : std_ulogic_vector(XLEN - 1 downto 0); -- machine counter access enable
-        mcountinhibit : std_ulogic_vector(XLEN - 1 downto 0); -- inhibit counter auto-increment
+        mtvec : caddr_t; -- machine trap-handler base address
+        mtval : caddr_t; -- machine bad address or instruction
+        mscratch : data_t; -- machine scratch register
+        mcounteren : data_t; -- machine counter access enable
+        mcountinhibit : data_t; -- inhibit counter auto-increment
         --
         frm : std_ulogic_vector(2 downto 0); -- FPU rounding mode
         fflags : std_ulogic_vector(4 downto 0); -- FPU exception flags
@@ -272,21 +272,21 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
         dcsr_step : std_ulogic; -- single-step mode
         dcsr_prv : std_ulogic; -- current privilege level when entering debug mode
         dcsr_cause : std_ulogic_vector(2 downto 0); -- why was debug mode entered
-        dcsr_rd : std_ulogic_vector(XLEN - 1 downto 0); -- debug mode control and status register
-        dpc : std_ulogic_vector(XLEN - 1 downto 0); -- mode program counter
-        dscratch0 : std_ulogic_vector(XLEN - 1 downto 0); -- debug mode scratch register 0
+        dcsr_rd : data_t; -- debug mode control and status register
+        dpc : caddr_t; -- mode program counter
+        dscratch0 : data_t; -- debug mode scratch register 0
         --
         tdata1_exe : std_ulogic; -- enable (match) trigger
         tdata1_action : std_ulogic; -- enter debug mode / ebreak exception when trigger fires
         tdata1_dmode : std_ulogic; -- set to ignore tdata* CSR access from machine-mode
-        tdata1_rd : std_ulogic_vector(XLEN - 1 downto 0); -- trigger register read-back
-        tdata2 : std_ulogic_vector(XLEN - 1 downto 0); -- address-match register
+        tdata1_rd : data_t; -- trigger register read-back
+        tdata2 : data_t; -- address-match register
     end record;
     signal csr : csr_t;
 
     -- hpm event configuration CSRs (first 3 entries are just dummies) --
     type hpmevent_cfg_t is array (0 to HPM_NUM_CNTS - 1) of std_ulogic_vector(hpmcnt_event_size_c - 1 downto 0);
-    type hpmevent_rd_t is array (0 to 31) of std_ulogic_vector(XLEN - 1 downto 0);
+    type hpmevent_rd_t is array (0 to 31) of data_t;
     type hpmevent_t is record
         we : std_ulogic_vector(31 downto 0);
         cfg : hpmevent_cfg_t;
@@ -295,7 +295,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     signal hpmevent_rd : hpmevent_rd_t;
 
     -- counter CSRs --
-    type cnt_dat_t is array (0 to 31) of std_ulogic_vector(XLEN - 1 downto 0);
+    type cnt_dat_t is array (0 to 31) of data_t;
     type cnt_nxt_t is array (0 to 31) of std_ulogic_vector(XLEN downto 0);
     type cnt_ovf_t is array (0 to 31) of std_ulogic_vector(0 downto 0);
     type cnt_t is record
@@ -1575,7 +1575,7 @@ begin
     -- Control and Status Registers - Write Data ----------------------------------------------
     -- -------------------------------------------------------------------------------------------
     csr_write_data : process (execute_engine.ir, csr.rdata, rs1_i)
-        variable tmp_v : std_ulogic_vector(XLEN - 1 downto 0);
+        variable tmp_v : data_t;
     begin
         -- immediate/register operand --
         if (execute_engine.ir(instr_funct3_msb_c) = '1') then
