@@ -80,7 +80,7 @@ begin
   -- -------------------------------------------------------------------------------------------
 
   -- access control --
-  acc_en <= '1' when (bus_req_i.addr(hi_abb_c downto lo_abb_c) = gpio_base_c(hi_abb_c downto lo_abb_c)) else '0';
+  acc_en <= '1' when is_peri(bus_req_i.addr) and (bus_req_i.addr(hi_abb_c downto lo_abb_c) = gpio_base_c(hi_abb_c downto lo_abb_c)) else '0';
   addr   <= gpio_base_c(31 downto lo_abb_c) & bus_req_i.addr(lo_abb_c-1 downto 2) & "00"; -- word aligned
   wren   <= acc_en and bus_req_i.we;
   rden   <= acc_en and bus_req_i.re;

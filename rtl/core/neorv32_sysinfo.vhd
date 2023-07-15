@@ -116,7 +116,7 @@ begin
 
   -- Access Control -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  acc_en <= '1' when (bus_req_i.addr(16 downto 15) = b"11") and ((bus_req_i.addr(hi_abb_c downto lo_abb_c) = sysinfo_base_c(hi_abb_c downto lo_abb_c))) else '0';
+  acc_en <= '1' when is_peri(bus_req_i.addr) and ((bus_req_i.addr(hi_abb_c downto lo_abb_c) = sysinfo_base_c(hi_abb_c downto lo_abb_c))) else '0';
   addr   <= bus_req_i.addr(index_size_f(sysinfo_size_c)-1 downto 2);
   rden   <= acc_en and bus_req_i.re; -- read access
   wren   <= acc_en and bus_req_i.we; -- write access

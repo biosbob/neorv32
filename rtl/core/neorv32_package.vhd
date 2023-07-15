@@ -65,6 +65,8 @@ package neorv32_package is
     constant XLEN : natural := 32; -- native data path width, do not change!
     constant CLEN : natural := 16; -- compressed address width, do not change!
 
+    type space_t is (I_SPACE, B_SPACE, D_SPACE, P_SPACE);
+
 
     -- Check if we're inside the Matrix -------------------------------------------------------
     -- -------------------------------------------------------------------------------------------
@@ -1050,6 +1052,9 @@ package neorv32_package is
     function to_CLEN(xv : std_ulogic_vector(XLEN - 1 downto 0)) return std_ulogic_vector;
     function to_XLEN(iv : std_ulogic_vector(CLEN - 1 downto 0)) return std_ulogic_vector;
 
+    function space_of(a : std_ulogic_vector) return space_t;
+    function is_peri(a : std_ulogic_vector) return boolean;
+
     -- ****************************************************************************************************************************
     -- Entity Definitions
     -- ****************************************************************************************************************************
@@ -1366,6 +1371,16 @@ package body neorv32_package is
     begin
         return (31 downto CLEN => '0') & iv;
     end function to_XLEN;
+
+    function space_of(a : std_ulogic_vector) return space_t is
+    begin
+        return space_t'val(to_integer(unsigned(a(16 downto 15))));
+    end function space_of;
+
+    function is_peri(a : std_ulogic_vector) return boolean is
+    begin
+        return space_of(a) = P_SPACE;
+    end function is_peri;
 
 
 end neorv32_package;

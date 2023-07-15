@@ -88,7 +88,6 @@ architecture neorv32_busswitch_rtl of neorv32_busswitch is
     signal is_boot : std_ulogic;
     signal is_peri : std_ulogic;
 
-    type space_t is (I, B, D, P);
     signal space : space_t;
 
 begin
@@ -206,7 +205,8 @@ begin
 
     cur_addr_o <= cur_addr_i(16 downto 0);
 
-    space <= space_t'val(to_integer(unsigned(cur_addr_o(16 downto 15))));
+--    space <= space_t'val(to_integer(unsigned(cur_addr_o(16 downto 15))));
+    space <= space_of(cur_addr_o);
 
     peri_req_o.addr <= data_req_i.addr when (arbiter.bus_sel = '0') else
                        to_XLEN(inst_req_i.addr);
