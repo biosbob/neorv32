@@ -121,9 +121,9 @@ architecture neorv32_cpu_rtl of neorv32_cpu is
     signal ma_store : std_ulogic; -- misaligned store data address
     signal be_load : std_ulogic; -- bus error on load data access
     signal be_store : std_ulogic; -- bus error on store data access
-    signal fetch_pc : std_ulogic_vector(CLEN - 1 downto 0); -- pc for instruction fetch
-    signal curr_pc : std_ulogic_vector(CLEN - 1 downto 0); -- current pc (for currently executed instruction)
-    signal next_pc : std_ulogic_vector(CLEN - 1 downto 0); -- next pc (for next executed instruction)
+    signal fetch_pc : iaddr_t; -- pc for instruction fetch
+    signal curr_pc : iaddr_t; -- current pc (for currently executed instruction)
+    signal next_pc : iaddr_t; -- next pc (for next executed instruction)
     signal fpu_flags : std_ulogic_vector(4 downto 0); -- FPU exception flags
     signal i_pmp_fault : std_ulogic; -- instruction fetch PMP fault
 

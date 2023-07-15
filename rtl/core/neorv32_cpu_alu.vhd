@@ -64,7 +64,7 @@ entity neorv32_cpu_alu is
     rs2_i       : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 2
     rs3_i       : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 3
     rs4_i       : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 4
-    pc_i        : in  std_ulogic_vector(CLEN-1 downto 0); -- current PC
+    pc_i        : in  iaddr_t; -- current PC
     imm_i       : in  std_ulogic_vector(XLEN-1 downto 0); -- immediate
     -- data output --
     cmp_o       : out std_ulogic_vector(1 downto 0); -- comparator status

@@ -86,7 +86,7 @@ entity neorv32_cpu_control is
         rstn_i : in std_ulogic; -- global reset, low-active, async
         ctrl_o : out ctrl_bus_t; -- main control bus
         -- instruction fetch interface --
-        i_bus_addr_o : out std_ulogic_vector(CLEN - 1 downto 0); -- bus access address
+        i_bus_addr_o : out iaddr_t; -- bus access address
         i_bus_rdata_i : in std_ulogic_vector(31 downto 0); -- bus read data
         i_bus_re_o : out std_ulogic; -- read enable
         i_bus_ack_i : in std_ulogic; -- bus transfer acknowledge
@@ -101,8 +101,8 @@ entity neorv32_cpu_control is
         rs1_i : in std_ulogic_vector(XLEN - 1 downto 0); -- rf source 1
         -- data output --
         imm_o : out std_ulogic_vector(XLEN - 1 downto 0); -- immediate
-        curr_pc_o : out std_ulogic_vector(CLEN - 1 downto 0); -- current PC (corresponding to current instruction)
-        next_pc_o : out std_ulogic_vector(CLEN - 1 downto 0); -- next PC (corresponding to next instruction)
+        curr_pc_o : out iaddr_t; -- current PC (corresponding to current instruction)
+        next_pc_o : out iaddr_t; -- next PC (corresponding to next instruction)
         csr_rdata_o : out std_ulogic_vector(XLEN - 1 downto 0); -- CSR read data
         -- FPU interface --
         fpu_flags_i : in std_ulogic_vector(4 downto 0); -- exception flags
@@ -136,7 +136,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
         state_prev : fetch_engine_state_t;
         restart : std_ulogic;
         unaligned : std_ulogic;
-        pc : std_ulogic_vector(CLEN - 1 downto 0);
+        pc : iaddr_t;
         reset : std_ulogic;
         resp : std_ulogic; -- bus response
         a_err : std_ulogic; -- alignment error
@@ -195,10 +195,10 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
         is_ci : std_ulogic; -- current instruction is de-compressed instruction
         is_ci_nxt : std_ulogic;
         branch_taken : std_ulogic; -- branch condition fulfilled
-        pc : std_ulogic_vector(CLEN - 1 downto 0); -- actual PC, corresponding to current executed instruction
+        pc : iaddr_t; -- actual PC, corresponding to current executed instruction
         pc_mux_sel : std_ulogic; -- source select for PC update
         pc_we : std_ulogic; -- PC update enabled
-        next_pc : std_ulogic_vector(CLEN - 1 downto 0); -- next PC, corresponding to next instruction to be executed
+        next_pc : iaddr_t; -- next PC, corresponding to next instruction to be executed
         next_pc_inc : std_ulogic_vector(XLEN - 1 downto 0); -- increment to get next PC
         branched : std_ulogic; -- instruction fetch was reset
         branched_nxt : std_ulogic;
@@ -213,7 +213,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
         irq_buf : std_ulogic_vector(irq_width_c - 1 downto 0); -- asynchronous exception/interrupt buffer (one bit per interrupt source)
         irq_fire : std_ulogic; -- set if an interrupt is actually kicking in
         cause : std_ulogic_vector(6 downto 0); -- trap ID for mcause CSR & debug-mode entry identifier
-        epc : std_ulogic_vector(CLEN - 1 downto 0); -- exception program counter
+        epc : iaddr_t; -- exception program counter
         --
         env_start : std_ulogic; -- start trap handler env
         env_ack : std_ulogic; -- start of trap handler acknowledged
@@ -256,7 +256,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
         privilege : std_ulogic; -- current privilege mode
         privilege_eff : std_ulogic; -- current *effective* privilege mode
         --
-        mepc : std_ulogic_vector(CLEN - 1 downto 0); -- machine exception PC
+        mepc : iaddr_t; -- machine exception PC
         mcause : std_ulogic_vector(5 downto 0); -- machine trap cause
         mtvec : std_ulogic_vector(XLEN - 1 downto 0); -- machine trap-handler base address
         mtval : std_ulogic_vector(XLEN - 1 downto 0); -- machine bad address or instruction

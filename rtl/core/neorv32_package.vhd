@@ -65,9 +65,6 @@ package neorv32_package is
     constant XLEN : natural := 32; -- native data path width, do not change!
     constant CLEN : natural := 16; -- compressed address width, do not change!
 
-    type space_t is (I_SPACE, B_SPACE, D_SPACE, P_SPACE);
-
-
     -- Check if we're inside the Matrix -------------------------------------------------------
     -- -------------------------------------------------------------------------------------------
     constant is_simulation_c : boolean := false -- seems like we're on real hardware
@@ -323,10 +320,15 @@ package neorv32_package is
     type mem32_t is array (natural range <>) of std_ulogic_vector(31 downto 0); -- memory with 32-bit entries
     type mem8_t is array (natural range <>) of std_ulogic_vector(07 downto 0); -- memory with 8-bit entries
 
+    type space_t is (I_SPACE, B_SPACE, D_SPACE, P_SPACE);
+    subtype caddr_t is std_ulogic_vector(XLEN - 1 downto 0);
+    subtype iaddr_t is std_ulogic_vector(CLEN - 1 downto 0);
+
+
     -- Internal Bus Interface: Request --------------------------------------------------------
     -- -------------------------------------------------------------------------------------------
     type bus_req_t is record
-        addr : std_ulogic_vector(31 downto 0); -- access address
+        addr : caddr_t; -- access address
         data : std_ulogic_vector(31 downto 0); -- write data
         ben : std_ulogic_vector(03 downto 0); -- byte enable
         we : std_ulogic; -- write request (single-shot)
@@ -335,7 +337,7 @@ package neorv32_package is
     end record;
 
     type inst_req_t is record
-        addr : std_ulogic_vector(CLEN - 1 downto 0); -- access address
+        addr : iaddr_t; -- access address
         data : std_ulogic_vector(31 downto 0); -- write data
         ben : std_ulogic_vector(03 downto 0); -- byte enable
         we : std_ulogic; -- write request (single-shot)
@@ -1050,7 +1052,7 @@ package neorv32_package is
     impure function mem32_init_f(init : mem32_t; depth : natural) return mem32_t;
 
     function to_CLEN(xv : std_ulogic_vector(XLEN - 1 downto 0)) return std_ulogic_vector;
-    function to_XLEN(iv : std_ulogic_vector(CLEN - 1 downto 0)) return std_ulogic_vector;
+    function to_XLEN(iv : iaddr_t) return std_ulogic_vector;
 
     function space_of(a : std_ulogic_vector) return space_t;
     function is_peri(a : std_ulogic_vector) return boolean;
@@ -1367,7 +1369,7 @@ package body neorv32_package is
         return xv(CLEN - 1 downto 0);
     end function to_CLEN;
 
-    function to_XLEN(iv : std_ulogic_vector(CLEN - 1 downto 0)) return std_ulogic_vector is
+    function to_XLEN(iv : iaddr_t) return std_ulogic_vector is
     begin
         return (31 downto CLEN => '0') & iv;
     end function to_XLEN;

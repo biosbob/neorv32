@@ -65,7 +65,7 @@ entity neorv32_cpu_regfile is
     alu_i  : in  std_ulogic_vector(XLEN-1 downto 0); -- ALU result
     mem_i  : in  std_ulogic_vector(XLEN-1 downto 0); -- memory read data
     csr_i  : in  std_ulogic_vector(XLEN-1 downto 0); -- CSR read data
-    pc2_i  : in  std_ulogic_vector(CLEN-1 downto 0); -- next PC
+    pc2_i  : in  iaddr_t; -- next PC
     -- data output --
     rs1_o  : out std_ulogic_vector(XLEN-1 downto 0); -- operand 1
     rs2_o  : out std_ulogic_vector(XLEN-1 downto 0); -- operand 2
