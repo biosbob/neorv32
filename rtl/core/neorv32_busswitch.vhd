@@ -82,8 +82,7 @@ architecture neorv32_busswitch_rtl of neorv32_busswitch is
     end record;
     signal arbiter : arbiter_t;
 
-    signal cur_addr_i : std_ulogic_vector(31 downto 0);
-    signal cur_addr_o : std_ulogic_vector(16 downto 0);
+    signal cur_addr : caddr_t;
     signal is_data : std_ulogic;
     signal is_boot : std_ulogic;
     signal is_peri : std_ulogic;
@@ -200,16 +199,13 @@ begin
 
     -- Peripheral Bus Switch ------------------------------------------------------------------
     -- -------------------------------------------------------------------------------------------
-    cur_addr_i <= data_req_i.addr when (arbiter.bus_sel = '0') else
-                  to_XLEN(inst_req_i.addr);
+    cur_addr <= data_req_i.addr when (arbiter.bus_sel = '0') else
+                  "0" & inst_req_i.addr;
 
-    cur_addr_o <= cur_addr_i(16 downto 0);
-
---    space <= space_t'val(to_integer(unsigned(cur_addr_o(16 downto 15))));
-    space <= space_of(cur_addr_o);
+    space <= space_of(cur_addr);
 
     peri_req_o.addr <= data_req_i.addr when (arbiter.bus_sel = '0') else
-                       to_XLEN(inst_req_i.addr);
+                       "0" & inst_req_i.addr;
 
     peri_req_o.data <= inst_req_i.data when (PORT_DATA_READ_ONLY = true) else
                        data_req_i.data when (PORT_INST_READ_ONLY = true) else

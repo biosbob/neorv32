@@ -450,7 +450,7 @@ begin
     end process io_gateway;
 
     -- IO access? --
-    io_acc <= '1' when (soc_req.addr(31) = '1') and (soc_req.addr(13) = '1') else
+    io_acc <= '1' when is_peri(soc_req.addr) else
               '0';
 
     -- General Purpose Input/Output Port (GPIO) -----------------------------------------------

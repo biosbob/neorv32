@@ -42,11 +42,22 @@ package neorv32_package is
     -- Architecture Configuration and Constants
     -- ****************************************************************************************************************************
 
+    -- Architecture Constants -----------------------------------------------------------------
+    -- -------------------------------------------------------------------------------------------
+    constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01080502"; -- hardware version
+    constant archid_c : natural := 19; -- official RISC-V architecture ID
+    constant XLEN : natural := 32; -- native data path width, do not change!
+    constant CLEN : natural := 16; -- compressed address width, do not change!
+
+    subtype caddr_t is std_ulogic_vector(CLEN downto 0);
+    subtype data_t is std_ulogic_vector(31 downto 0);
+    subtype iaddr_t is std_ulogic_vector(CLEN - 1 downto 0);
+    
     -- Architecture Configuration -------------------------------------------------------------
     -- -------------------------------------------------------------------------------------------
     -- address space --
-    constant ispace_base_c : std_ulogic_vector(31 downto 0) := x"00000000"; -- default instruction memory address space base address
-    constant dspace_base_c : std_ulogic_vector(31 downto 0) := x"FFFF0000"; -- default data memory address space base address
+    constant ispace_base_c : caddr_t := b"0" & x"0000"; -- default instruction memory address space base address
+    constant dspace_base_c : caddr_t := b"1" & x"0000"; -- default data memory address space base address
 
     -- if register x0 is implemented as a *physical register* it has to be explicitly set to zero by the CPU hardware --
     constant reset_x0_c : boolean := true; -- has to be 'true' for the default register file rtl description (BRAM-based)
@@ -58,12 +69,6 @@ package neorv32_package is
     -- log2 of co-processor timeout cycles --
     constant cp_timeout_c : natural := 7; -- default = 7 (= 128 cycles)
 
-    -- Architecture Constants -----------------------------------------------------------------
-    -- -------------------------------------------------------------------------------------------
-    constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01080502"; -- hardware version
-    constant archid_c : natural := 19; -- official RISC-V architecture ID
-    constant XLEN : natural := 32; -- native data path width, do not change!
-    constant CLEN : natural := 16; -- compressed address width, do not change!
 
     -- Check if we're inside the Matrix -------------------------------------------------------
     -- -------------------------------------------------------------------------------------------
@@ -84,8 +89,8 @@ package neorv32_package is
     -- ****************************************************************************************************************************
 
     -- Internal Instruction Memory (IMEM) and Date Memory (DMEM) --
-    constant imem_base_c : std_ulogic_vector(31 downto 0) := ispace_base_c; -- internal instruction memory base address
-    constant dmem_base_c : std_ulogic_vector(31 downto 0) := dspace_base_c; -- internal data memory base address
+    constant imem_base_c : caddr_t := ispace_base_c; -- internal instruction memory base address
+    constant dmem_base_c : caddr_t := dspace_base_c; -- internal data memory base address
     --> internal data/instruction memory sizes are configured via top's generics
 
     -- !!! IMPORTANT: The base address of each component/module has to be aligned to the !!!
@@ -321,10 +326,6 @@ package neorv32_package is
     type mem8_t is array (natural range <>) of std_ulogic_vector(07 downto 0); -- memory with 8-bit entries
 
     type space_t is (I_SPACE, B_SPACE, D_SPACE, P_SPACE);
-    subtype caddr_t is std_ulogic_vector(XLEN - 1 downto 0);
-    subtype data_t is std_ulogic_vector(31 downto 0);
-    subtype iaddr_t is std_ulogic_vector(CLEN - 1 downto 0);
-
 
     -- Internal Bus Interface: Request --------------------------------------------------------
     -- -------------------------------------------------------------------------------------------

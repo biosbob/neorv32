@@ -58,7 +58,7 @@ architecture neorv32_boot_rom_rtl of neorv32_boot_rom is
   constant boot_rom_size_c       : natural := (2**boot_rom_size_index_c)*4; -- size in bytes
 
   -- IO space: module base address --
-  constant hi_abb_c : natural := 31; -- high address boundary bit
+  constant hi_abb_c : natural := CLEN; -- high address boundary bit
   constant lo_abb_c : natural := index_size_f(boot_rom_max_size_c); -- low address boundary bit
 
   -- local signals --

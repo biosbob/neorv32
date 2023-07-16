@@ -69,7 +69,7 @@ entity neorv32_cpu_alu is
     -- data output --
     cmp_o       : out std_ulogic_vector(1 downto 0); -- comparator status
     res_o       : out std_ulogic_vector(XLEN-1 downto 0); -- ALU result
-    add_o       : out std_ulogic_vector(XLEN-1 downto 0); -- address computation result
+    add_o       : out caddr_t; -- address computation result
     fpu_flags_o : out std_ulogic_vector(4 downto 0); -- FPU exception flags
     -- status --
     exc_o       : out std_ulogic; -- ALU exception
@@ -133,7 +133,7 @@ begin
   addsub_res <= std_ulogic_vector(unsigned(opa_x) - unsigned(opb_x)) when (ctrl_i.alu_op(0) = '1') else
                 std_ulogic_vector(unsigned(opa_x) + unsigned(opb_x));
 
-  add_o <= addsub_res(XLEN-1 downto 0); -- direct output of adder result
+  add_o <= addsub_res(CLEN downto 0); -- direct output of adder result
 
 
   -- ALU Operation Select -------------------------------------------------------------------

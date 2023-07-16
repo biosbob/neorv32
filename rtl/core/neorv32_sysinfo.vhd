@@ -173,10 +173,10 @@ begin
   sysinfo(3)(31 downto 28) <= (others => '0'); -- d-cache: replacement strategy
 
   -- SYSINFO(4): Base address of instruction memory space --
-  sysinfo(4) <= ispace_base_c; -- defined in neorv32_package.vhd file
+  sysinfo(4) <= (XLEN - 1 downto CLEN + 1 => '0') & ispace_base_c; -- defined in neorv32_package.vhd file
 
   -- SYSINFO(5): Base address of data memory space --
-  sysinfo(5) <= dspace_base_c; -- defined in neorv32_package.vhd file
+  sysinfo(5) <= (XLEN - 1 downto CLEN + 1 => '0') & dspace_base_c; -- defined in neorv32_package.vhd file
 
   -- SYSINFO(6): Size of IMEM in bytes --
   sysinfo(6) <= std_ulogic_vector(to_unsigned(MEM_INT_IMEM_SIZE, 32)) when (MEM_INT_IMEM_EN = true) else (others => '0');
